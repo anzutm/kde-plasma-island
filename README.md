@@ -134,6 +134,7 @@ kde-plasma-island/
 │       ├── ConfigGeneral.qml
 │       ├── ConfigAppearance.qml
 │       └── ConfigModules.qml
+├── LICENSE
 ├── metadata.json
 └── README.md
 ```
@@ -142,4 +143,4 @@ kde-plasma-island/
 
 ## License
 
-Licensed under the [GPL-2.0-or-later](https://www.gnu.org/licenses/old-licenses/gpl-2.0.html) license. See [`metadata.json`](metadata.json) for plugin metadata.
+Licensed under the [GPL-2.0-or-later](LICENSE) license. See [`metadata.json`](metadata.json) for plugin metadata.

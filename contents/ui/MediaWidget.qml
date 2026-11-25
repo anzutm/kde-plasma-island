@@ -1,6 +1,6 @@
 // MediaWidget.qml — Plasma Island for KDE Plasma 6
-// Layout: [Album Art] [Title / Artist Marquee] [⏮] [▶/⏸] [⏭] [Waveform Visualizer]
-// Waveform: Modern 5-bar equalizer to the right of controls with fluid scene-graph animations
+// Layout: [Album Art] [Title / Artist Marquee] [⏮] [▶/⏸] [⏭] [Mirrored Soundwave]
+// Waveform: 7-lobe continuous mirrored Canvas soundwave with calm harmonic animation
 import QtQuick
 import QtQuick.Effects
 import org.kde.kirigami as Kirigami
