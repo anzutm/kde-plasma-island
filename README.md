@@ -23,42 +23,12 @@
 
 ## Features
 
-### 1. Clock (`ClockWidget`)
-- **12-hour / 24-hour** toggle and optional **seconds** display.
-- **Anti-jitter layout** using OpenType tabular numbers (`tnum`) and `TextMetrics`-measured width.
-- **Locale-aware date** formatting (`Qt.formatDate`).
-
-### 2. Weather (`WeatherWidget`)
-- Powered by [`wttr.in`](https://wttr.in) JSON API (no API key required).
-- Supports **manual city/location** or **IP-based auto-detection** (indicated in tooltip).
-- **°C / °F** temperature units, configurable refresh interval (`1–120 min`), and **click-to-refresh**.
-- Native Kirigami symbolic weather icons.
-
-### 3. Workspace Switcher (`WorkspaceWidget`)
-- Zero-polling native integration with `org.kde.taskmanager` (`VirtualDesktopInfo` & `TasksModel`).
-- Click any workspace circle to switch instantly via KWin D-Bus (`qdbus6`), or **scroll anywhere** on the widget to cycle desktops.
-- Optional **Hide empty workspaces** toggle.
-
-### 4. Media Player (`MediaWidget`)
-- MPRIS2 control via `playerctl` with smart player selection (prioritizes `Playing` state and `plasma-browser-integration` for clean artist/title and real YouTube/web artwork).
-- Rounded album art using native Qt 6 `MultiEffect` masking.
-- Seamless infinite **marquee scrolling** for long track titles.
-- **Previous / Play-Pause / Next** controls with rapid-click sync guard.
-- **Real-time 7-band FFT bass waveform** (`Canvas` + PipeWire `parec`, bass on the left → mid/high instruments to the right, with automatic rhythmic fallback), plus optional **Auto-hide when no media is playing**.
-
-### 5. System Status Monitor (`StatusWidget`)
-- **Single-fork unified telemetry** (~50–70 ms per tick) combining `/proc/meminfo`, `/proc/stat`, `/proc/net/dev`, `hwmon`, and `power_supply` with timeout-guarded CLI queries so no stalled daemon can block updates.
-- **Wi-Fi Badge:** Active SSID (`nmcli`), click to open KDE Network Settings.
-- **Bluetooth Badge:** Fast `/sys/class/rfkill` + `busctl` state check with 1-click toggle.
-- **Battery %:** Automatically hidden on desktop PCs without a battery; full icon range + charging tooltip.
-- **Volume %:** Click to mute/unmute, **scroll wheel** (`±5%`, capped at `100%`) via `wpctl`.
-- **Hardware Telemetry:** Download speed (`↓`), CPU usage %, CPU temperature (`coretemp` / `k10temp` / `zenpower` priority with thermal color coding), and RAM usage %.
-- **Quick Actions:** One-click shortcuts for **System Settings** and **KRunner**.
-
-### 6. Appearance & Configuration
-- **Layout Modes:** Switch between **Full-width 3-zone bar** (Left: Clock/Weather/Workspaces, Center: Media, Right: Status) and **Compact Pill**.
-- **Dark Mode & Light Mode:** Full adaptive color palettes for text, icons, dividers, badges, and shadows.
-- **Live Preview & Presets:** `0%–100%` opacity slider, `0–60 px` corner radius, clickable `ColorDialog` swatches, hex inputs, and **8 built-in presets** (*Dark, Darker, Navy, Forest, Light, Paper, Frost, Warm*).
+- **Clock** — 12h/24h format, optional seconds, and locale-aware date.
+- **Weather** — Live temperature and conditions (`°C`/`°F`) with manual city or auto-location.
+- **Workspaces** — Virtual desktop indicator with click switching, scroll cycling, and optional hide-empty toggle.
+- **Media Player** — Album art, scrolling title, playback controls, auto-hide option, and a real-time bass-reactive waveform.
+- **System Status** — Wi-Fi, Bluetooth toggle, battery, volume (mute & scroll), network speed, CPU, temperature, RAM, and quick Settings/KRunner shortcuts.
+- **Appearance** — Full-width 3-zone bar or compact pill, Dark & Light modes, `0%–100%` opacity, custom colors, and 8 theme presets.
 
 ---
 
