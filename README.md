@@ -44,7 +44,7 @@
 - Rounded album art using native Qt 6 `MultiEffect` masking.
 - Seamless infinite **marquee scrolling** for long track titles.
 - **Previous / Play-Pause / Next** controls with rapid-click sync guard.
-- **Mirrored continuous soundwave visualizer** (`Canvas`), plus optional **Auto-hide when no media is playing**.
+- **Real-time 7-band FFT bass waveform** (`Canvas` + PipeWire `parec`, bass on the left → mid/high instruments to the right, with automatic rhythmic fallback), plus optional **Auto-hide when no media is playing**.
 
 ### 5. System Status Monitor (`StatusWidget`)
 - **Single-fork unified telemetry** (~50–70 ms per tick) combining `/proc/meminfo`, `/proc/stat`, `/proc/net/dev`, `hwmon`, and `power_supply` with timeout-guarded CLI queries so no stalled daemon can block updates.
@@ -67,6 +67,7 @@
 - **KDE Plasma 6.0+** & **Qt 6** (`qt6-declarative`, `kirigami`, `kcmutils`, `plasma5support`)
 - Runtime CLI utilities (all optional per module):
   - `playerctl` — Media Player (`plasma-browser-integration` recommended for browser thumbnails)
+  - `parec` + `python3` — Live PipeWire FFT waveform analyzer (optional; falls back to procedural pulse)
   - `nmcli` (NetworkManager) — Wi-Fi SSID detection
   - `wpctl` (WirePlumber / PipeWire) — Volume indicator & scroll control
   - `qdbus6` — Virtual desktop switching
@@ -123,6 +124,8 @@ kde-plasma-island/
 │   │   └── main.xml
 │   ├── icons/
 │   │   └── plasma-island.svg
+│   ├── scripts/
+│   │   └── audio_bass.py
 │   ├── screenshot.png
 │   └── ui/
 │       ├── main.qml

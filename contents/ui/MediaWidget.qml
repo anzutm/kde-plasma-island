@@ -1,6 +1,6 @@
 // MediaWidget.qml — Plasma Island for KDE Plasma 6
-// Layout: [Album Art] [Title / Artist Marquee] [⏮] [▶/⏸] [⏭] [Mirrored Soundwave]
-// Waveform: 7-lobe continuous mirrored Canvas soundwave with calm harmonic animation
+// Layout: [Album Art] [Title / Artist Marquee] [⏮] [▶/⏸] [⏭] [Mirrored Bass Waveform]
+// Waveform: Real-time 7-band PipeWire FFT soundwave with smooth quadratic spline interpolation
 import QtQuick
 import QtQuick.Effects
 import org.kde.kirigami as Kirigami
@@ -23,6 +23,15 @@ Item {
     property string activePlayer:   ""
     property bool   pendingControl: false
     property int    _syncSeq:       0
+
+    // Real-time PipeWire FFT bass analyzer state (with automatic fallback)
+    readonly property string bassScriptPath: Qt.resolvedUrl("../scripts/audio_bass.py").toString().replace(/^file:\/\//, "")
+    property int  bassPort:        0
+    property bool _bassStarting:   false
+    property bool _bassInFlight:   false
+    property var  fftBands:        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    property bool hasLiveAudio:    false
+    property real _lastLiveMs:     0
 
     readonly property bool playing:    playbackStatus === "Playing"
     readonly property bool hasMedia:   title !== "" && playbackStatus !== "Stopped"
@@ -100,7 +109,13 @@ Item {
         onNewData: function(source, data) {
             const out = (data["stdout"] || "").trim()
 
-            if (source.includes("playerctl_sync_")) {
+            if (source.includes("bass_start_")) {
+                root._bassStarting = false
+                const m = out.match(/PORT:(\d+)/)
+                if (m && root.playing && root.shouldShow) {
+                    root.bassPort = parseInt(m[1]) || 0
+                }
+            } else if (source.includes("playerctl_sync_")) {
                 if (source.includes(`playerctl_sync_${root._syncSeq}`)) {
                     root.pendingControl = false
                     root.applyMetadata(out)
@@ -111,6 +126,82 @@ Item {
 
             disconnectSource(source)
         }
+    }
+
+    function startBassAnalyzer() {
+        if (root.bassPort > 0 || root._bassStarting) return
+        root._bassStarting = true
+        const safePath = root.bassScriptPath.replace(/'/g, "'\\''")
+        mediaExec.connectSource(
+            `bash -c 'python3 '\''${safePath}'\'' --ppid $(ps -o ppid= -p $$ | tr -d " ")'  # bass_start_${Date.now()}`
+        )
+    }
+
+    function stopBassAnalyzer() {
+        root._bassStarting = false
+        root._bassInFlight = false
+        root.hasLiveAudio = false
+        root.fftBands = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+        if (root.bassPort > 0) {
+            const url = `http://127.0.0.1:${root.bassPort}/stop`
+            root.bassPort = 0
+            const xhr = new XMLHttpRequest()
+            xhr.timeout = 300
+            xhr.open("GET", url)
+            xhr.send()
+        }
+    }
+
+    function pollBassAnalyzer() {
+        if (root.bassPort <= 0 || root._bassInFlight) return
+        root._bassInFlight = true
+        const xhr = new XMLHttpRequest()
+        xhr.timeout = 250
+        xhr.ontimeout = function() { root._bassInFlight = false }
+        xhr.onerror = function() {
+            root._bassInFlight = false
+            root.bassPort = 0
+            root.hasLiveAudio = false
+        }
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState !== XMLHttpRequest.DONE) return
+            root._bassInFlight = false
+            if (xhr.status === 200) {
+                try {
+                    const d = JSON.parse(xhr.responseText)
+                    const arr = Array.isArray(d.bands) && d.bands.length >= 7
+                                ? d.bands.map(v => Math.max(0, Math.min(1, Number(v) || 0)))
+                                : [0, 0, 0, 0, 0, 0, 0]
+                    const maxBand = Math.max.apply(null, arr)
+                    const now = Date.now()
+                    if (maxBand > 0.015) {
+                        root._lastLiveMs = now
+                        root.hasLiveAudio = true
+                    } else if (now - root._lastLiveMs > 1500) {
+                        root.hasLiveAudio = false
+                    }
+                    root.fftBands = arr
+                    waveCanvas.requestPaint()
+                } catch(e) {}
+            }
+        }
+        xhr.open("GET", `http://127.0.0.1:${root.bassPort}/bass`)
+        xhr.send()
+    }
+
+    readonly property bool waveActive: root.playing && root.shouldShow
+    onWaveActiveChanged: {
+        if (waveActive) startBassAnalyzer()
+        else stopBassAnalyzer()
+    }
+    Component.onDestruction: stopBassAnalyzer()
+
+    Timer {
+        id: bassPollTimer
+        interval: 33
+        running:  root.waveActive && root.bassPort > 0
+        repeat:   true
+        onTriggered: root.pollBassAnalyzer()
     }
 
     function buildQueryCmd(tag) {
@@ -126,6 +217,9 @@ Item {
         onTriggered: {
             if (!root.pendingControl) {
                 mediaExec.connectSource(root.buildQueryCmd("playerctl_metadata"))
+            }
+            if (root.waveActive && root.bassPort === 0 && !root._bassStarting) {
+                root.startBassAnalyzer()
             }
         }
     }
@@ -385,9 +479,9 @@ Item {
                 NumberAnimation on phase {
                     from:     0
                     to:       Math.PI * 2
-                    duration: 2200
+                    duration: 1800
                     loops:    Animation.Infinite
-                    running:  root.playing && root.shouldShow
+                    running:  root.waveActive && !root.hasLiveAudio
                 }
 
                 onPaint: {
@@ -399,55 +493,72 @@ Item {
 
                     const cy = h * 0.5
                     const maxHalf = h * 0.48
-                    const steps = 96
+                    const bands = root.fftBands
+                    const live = root.hasLiveAudio
 
-                    // 7 symmetrical mirrored lobes with smooth, calm harmonic motion
-                    const lobes = [
-                        { c: 0.11, w: 0.042, base: 0.38, s1: 1, s2: 2, off: 0.4 },
-                        { c: 0.22, w: 0.044, base: 0.52, s1: 2, s2: 3, off: 1.7 },
-                        { c: 0.35, w: 0.048, base: 0.46, s1: 1, s2: 3, off: 3.1 },
-                        { c: 0.50, w: 0.066, base: 1.00, s1: 2, s2: 3, off: 0.0 },
-                        { c: 0.65, w: 0.048, base: 0.46, s1: 1, s2: 3, off: 4.5 },
-                        { c: 0.78, w: 0.044, base: 0.52, s1: 2, s2: 3, off: 2.4 },
-                        { c: 0.89, w: 0.042, base: 0.38, s1: 1, s2: 2, off: 5.2 }
+                    // Build 7 FFT magnitudes (b0 = sub-bass left, b6 = highs right)
+                    const b = new Array(7)
+                    for (let i = 0; i < 7; i++) {
+                        if (!root.playing) {
+                            b[i] = 0.55
+                        } else if (live) {
+                            b[i] = Math.max(0.05, Math.min(1.0, bands[i] || 0))
+                        } else {
+                            const kick = Math.pow(0.5 + 0.5 * Math.sin(phase * 2 - i * 0.45), 2.0)
+                            b[i] = 0.14 + 0.78 * kick * (1.0 - i * 0.08)
+                        }
+                    }
+
+                    // Left-to-right FFT spectrum with matching sleek horizontal needle tails on both ends
+                    const pts = [
+                        { x: 0.00, y: 0.0 },
+                        { x: 0.03, y: 0.055 + b[0] * 0.05 },
+                        { x: 0.08, y: 0.065 + b[0] * 0.12 },
+                        { x: 0.14, y: b[0] * 0.62 },
+                        { x: 0.22, y: b[0] * 1.44 },
+                        { x: 0.30, y: Math.min(b[0], b[1]) * 0.28 },
+                        { x: 0.38, y: b[1] * 1.34 },
+                        { x: 0.46, y: Math.min(b[1], b[2]) * 0.26 },
+                        { x: 0.54, y: b[2] * 1.24 },
+                        { x: 0.62, y: Math.min(b[2], b[3]) * 0.24 },
+                        { x: 0.69, y: b[3] * 1.24 },
+                        { x: 0.76, y: Math.min(b[3], b[4]) * 0.24 },
+                        { x: 0.83, y: b[4] * 1.18 },
+                        { x: 0.89, y: Math.min(b[4], b[5]) * 0.22 },
+                        { x: 0.93, y: b[5] * 1.05 },
+                        { x: 0.96, y: 0.065 + b[6] * 0.45 },
+                        { x: 0.985, y: 0.055 + b[6] * 0.08 },
+                        { x: 1.00, y: 0.0 }
                     ]
 
-                    const halfHeights = new Array(steps + 1)
-                    for (let i = 0; i <= steps; i++) {
-                        const u = i / steps
-                        const endTaper = Math.sin(Math.PI * u)
-                        // Continuous thin waist connecting the lobes
-                        let env = 0.08 * Math.pow(endTaper, 1.3)
-
-                        for (let k = 0; k < lobes.length; k++) {
-                            const lb = lobes[k]
-                            const d = (u - lb.c) / lb.w
-                            const g = Math.exp(-d * d)
-                            let mod = 1.0
-                            if (root.playing) {
-                                const h1 = Math.sin(phase * lb.s1 + lb.off)
-                                const h2 = Math.cos(phase * lb.s2 - lb.off * 1.2)
-                                const pulse = 0.62 + 0.24 * h1 + 0.16 * h2
-                                mod = Math.max(0.35, Math.min(1.05, pulse))
-                            }
-                            env += lb.base * mod * g
-                        }
-
-                        if (root.playing) {
-                            env += 0.03 * Math.sin(u * 14.0 - phase * 2.0) * Math.sin(Math.PI * u)
-                        }
-
-                        halfHeights[i] = maxHalf * amp * Math.max(0.0, Math.min(1.0, env)) * Math.pow(endTaper, 0.3)
+                    // Convert to pixel coordinates (quadratic spline apex reaches ~0.5*ctrl + 0.5*valley)
+                    const topX = new Array(pts.length)
+                    const topY = new Array(pts.length)
+                    const botY = new Array(pts.length)
+                    for (let i = 0; i < pts.length; i++) {
+                        const taper = Math.sin(Math.PI * pts[i].x)
+                        const hh = maxHalf * amp * Math.min(1.65, pts[i].y + (root.playing ? 0.04 * taper : 0))
+                        topX[i] = pts[i].x * w
+                        topY[i] = cy - hh
+                        botY[i] = cy + hh
                     }
 
+                    // Smooth quadratic spline across top contour then mirrored bottom contour
                     ctx.beginPath()
-                    ctx.moveTo(0, cy)
-                    for (let i = 1; i <= steps; i++) {
-                        ctx.lineTo((i / steps) * w, cy - halfHeights[i])
+                    ctx.moveTo(topX[0], cy)
+                    for (let i = 1; i < pts.length - 1; i++) {
+                        const mx = (topX[i] + topX[i + 1]) * 0.5
+                        const my = (topY[i] + topY[i + 1]) * 0.5
+                        ctx.quadraticCurveTo(topX[i], topY[i], mx, my)
                     }
-                    for (let i = steps - 1; i >= 0; i--) {
-                        ctx.lineTo((i / steps) * w, cy + halfHeights[i])
+                    ctx.lineTo(topX[pts.length - 1], cy)
+
+                    for (let i = pts.length - 2; i >= 1; i--) {
+                        const mx = (topX[i] + topX[i - 1]) * 0.5
+                        const my = (botY[i] + botY[i - 1]) * 0.5
+                        ctx.quadraticCurveTo(topX[i], botY[i], mx, my)
                     }
+                    ctx.lineTo(topX[0], cy)
                     ctx.closePath()
                     ctx.fillStyle = waveColor
                     ctx.fill()
