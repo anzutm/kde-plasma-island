@@ -239,6 +239,7 @@ Item {
                         implicitWidth:  14
                         implicitHeight: 14
                         anchors.verticalCenter: parent.verticalCenter
+                        isMask: true
                         color: root.wifiConnected
                                ? (root.isLight ? "#ffffff" : "#1e1f22")
                                : (root.isLight ? Qt.rgba(0, 0, 0, 0.5) : Qt.rgba(1, 1, 1, 0.45))
@@ -295,6 +296,7 @@ Item {
                             : "network-bluetooth-symbolic"
                     implicitWidth:  14
                     implicitHeight: 14
+                    isMask: true
                     color: root.bluetoothOn
                            ? (root.isLight ? "#ffffff" : "#1e1f22")
                            : (root.isLight ? Qt.rgba(0, 0, 0, 0.5) : Qt.rgba(1, 1, 1, 0.45))
@@ -362,6 +364,7 @@ Item {
                         implicitWidth:  14
                         implicitHeight: 14
                         anchors.verticalCenter: parent.verticalCenter
+                        isMask: true
                         color: root.batteryPercent < 20
                                ? (root.isLight ? "#dc2626" : "#ef4444")
                                : (root.isLight ? "#18181b" : "white")
@@ -410,6 +413,7 @@ Item {
                         implicitWidth:  14
                         implicitHeight: 14
                         anchors.verticalCenter: parent.verticalCenter
+                        isMask: true
                         color: root.volumeMuted
                                ? (root.isLight ? Qt.rgba(0, 0, 0, 0.45) : Qt.rgba(1, 1, 1, 0.45))
                                : (root.isLight ? "#18181b" : "white")
@@ -532,6 +536,7 @@ Item {
                     implicitWidth:  13
                     implicitHeight: 13
                     anchors.verticalCenter: parent.verticalCenter
+                    isMask: true
                     color: root.isLight ? Qt.rgba(0, 0, 0, 0.6) : Qt.rgba(1, 1, 1, 0.55)
                 }
                 PC3.Label {
@@ -607,6 +612,7 @@ Item {
                         source: modelData.icon
                         implicitWidth:  13
                         implicitHeight: 13
+                        isMask: true
                         color: root.isLight ? "#18181b" : "white"
                     }
 

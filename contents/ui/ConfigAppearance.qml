@@ -197,18 +197,6 @@ KCM.SimpleKCM {
                     radius:  radiusSpin.value
                     color:   /^#[0-9a-fA-F]{6}$/.test(bgField.text) ? bgField.text : (previewBackdrop.previewLight ? "#f4f4f5" : "#1e1f22")
                     opacity: opacitySlider.value
-                    border.width: 1
-                    border.color: previewBackdrop.previewLight ? Qt.rgba(0, 0, 0, 0.12) : Qt.rgba(1, 1, 1, 0.08)
-
-                    Rectangle {
-                        readonly property real inset: Math.max(parent.radius * 0.65, parent.width * 0.2)
-                        width:  Math.max(0, parent.width - inset * 2)
-                        height: 1
-                        x:      inset
-                        y:      0
-                        color:  previewBackdrop.previewLight ? Qt.rgba(1, 1, 1, 0.65) : Qt.rgba(1, 1, 1, 0.15)
-                        radius: 1
-                    }
                 }
 
                 RowLayout {

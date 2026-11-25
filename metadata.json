@@ -5,6 +5,7 @@
         "Category": "System Information",
         "Description": "All-in-one dynamic status pill with clock, weather, workspaces, media player, and system monitor",
         "EnabledByDefault": true,
+        "Icon": "preferences-desktop-plasma",
         "Id": "com.anzu.plasma-island",
         "License": "GPL-2.0-or-later",
         "Name": "Plasma Island",

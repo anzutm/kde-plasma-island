@@ -17,11 +17,7 @@
 
 ## Preview
 
-### 3-Zone Full-Width Mode (Transparent `0%` Opacity)
-![Plasma Island Full-Width Preview](assets/preview-fullwidth.jpg)
-
-### Compact Pill Mode (Dark Glass)
-![Plasma Island Compact Pill Preview](assets/preview-pill.jpg)
+![Plasma Island Preview](assets/preview.png)
 
 ---
 
@@ -120,12 +116,14 @@ kpackagetool6 -t Plasma/Applet -r com.anzu.plasma-island
 ```text
 kde-plasma-island/
 ├── assets/
-│   ├── preview-fullwidth.jpg
-│   └── preview-pill.jpg
+│   └── preview.png
 ├── contents/
 │   ├── config/
 │   │   ├── config.qml
 │   │   └── main.xml
+│   ├── icons/
+│   │   └── plasma-island.svg
+│   ├── screenshot.png
 │   └── ui/
 │       ├── main.qml
 │       ├── ClockWidget.qml

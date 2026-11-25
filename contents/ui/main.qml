@@ -53,26 +53,6 @@ PlasmoidItem {
             color:   root.bgColor
             opacity: root.pillOpacity
 
-            // Top highlight glass rim (clamped inside rounded corners)
-            Rectangle {
-                readonly property real inset: Math.max(parent.radius * 0.65, parent.width * 0.2)
-                width:  Math.max(0, parent.width - inset * 2)
-                height: 1
-                x:      inset
-                y:      0
-                color:  root.isLight ? Qt.rgba(1, 1, 1, 0.65) : Qt.rgba(1, 1, 1, 0.12)
-                radius: 1
-            }
-
-            // Subtle 1px inner border
-            Rectangle {
-                anchors.fill: parent
-                radius:       parent.radius
-                color:        "transparent"
-                border.width: 1
-                border.color: root.isLight ? Qt.rgba(0, 0, 0, 0.10) : Qt.rgba(1, 1, 1, 0.08)
-            }
-
             layer.enabled: true
             layer.effect: MultiEffect {
                 shadowEnabled:          true

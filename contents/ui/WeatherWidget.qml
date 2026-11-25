@@ -118,6 +118,7 @@ Item {
             implicitWidth:    15
             implicitHeight:   15
             anchors.verticalCenter: parent.verticalCenter
+            isMask:           true
             color:            root.isLight ? "#18181b" : "white"
             visible:          !(root.loading && root.temp === "--")
         }

@@ -218,6 +218,7 @@ Item {
                 source:           "music-note-16th-symbolic"
                 implicitWidth:    16
                 implicitHeight:   16
+                isMask:           true
                 color:            root.isLight ? Qt.rgba(0, 0, 0, 0.45) : Qt.rgba(1, 1, 1, 0.45)
                 visible:          !root.artReady
             }
