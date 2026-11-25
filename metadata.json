@@ -1,0 +1,15 @@
+{
+    "KPackageStructure": "Plasma/Applet",
+    "KPlugin": {
+        "Authors": [{"Name": "anzu"}],
+        "Category": "System Information",
+        "Description": "All-in-one dynamic status pill with clock, weather, workspaces, media player, and system monitor",
+        "EnabledByDefault": true,
+        "Id": "com.anzu.plasma-island",
+        "License": "GPL-2.0-or-later",
+        "Name": "Plasma Island",
+        "Version": "1.1.0"
+    },
+    "X-Plasma-API-Minimum-Version": "6.0",
+    "X-Plasma-NotificationArea": false
+}

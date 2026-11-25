@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kcfg xmlns="http://www.kde.org/standards/kcfg/1.0"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://www.kde.org/standards/kcfg/1.0 http://www.kde.org/standards/kcfg/1.0/kcfg.xsd">
+  <kcfgfile name=""/>
+
+  <!-- Appearance -->
+  <group name="Appearance">
+    <entry name="pillOpacity" type="Double">
+      <default>0.82</default>
+    </entry>
+    <entry name="pillBorderRadius" type="Int">
+      <default>22</default>
+    </entry>
+    <entry name="accentColor" type="String">
+      <default>#8b5cf6</default>
+    </entry>
+    <entry name="pillBackground" type="String">
+      <default>#1e1f22</default>
+    </entry>
+    <entry name="pillFullWidth" type="Bool">
+      <default>true</default>
+    </entry>
+    <entry name="themeMode" type="String">
+      <default>dark</default>
+    </entry>
+  </group>
+
+  <!-- Clock -->
+  <group name="Clock">
+    <entry name="clockUse24h" type="Bool">
+      <default>true</default>
+    </entry>
+    <entry name="clockShowSeconds" type="Bool">
+      <default>false</default>
+    </entry>
+  </group>
+
+  <!-- Weather -->
+  <group name="Weather">
+    <entry name="showWeatherWidget" type="Bool">
+      <default>true</default>
+    </entry>
+    <entry name="weatherTempUnit" type="String">
+      <default>C</default>
+    </entry>
+    <entry name="weatherRefreshInterval" type="Int">
+      <default>10</default>
+    </entry>
+    <entry name="weatherLocation" type="String">
+      <default></default>
+    </entry>
+  </group>
+
+  <!-- Workspace -->
+  <group name="Workspace">
+    <entry name="showWorkspaceWidget" type="Bool">
+      <default>true</default>
+    </entry>
+    <entry name="workspaceHideEmpty" type="Bool">
+      <default>false</default>
+    </entry>
+  </group>
+
+  <!-- Media -->
+  <group name="Media">
+    <entry name="showMediaWidget" type="Bool">
+      <default>true</default>
+    </entry>
+    <entry name="mediaAutoHide" type="Bool">
+      <default>false</default>
+    </entry>
+  </group>
+
+  <!-- Status -->
+  <group name="Status">
+    <entry name="showStatusWidget" type="Bool">
+      <default>true</default>
+    </entry>
+    <entry name="statusShowNetwork" type="Bool">
+      <default>true</default>
+    </entry>
+    <entry name="statusShowBluetooth" type="Bool">
+      <default>true</default>
+    </entry>
+    <entry name="statusShowBattery" type="Bool">
+      <default>true</default>
+    </entry>
+    <entry name="statusShowVolume" type="Bool">
+      <default>true</default>
+    </entry>
+    <entry name="statusShowNetSpeed" type="Bool">
+      <default>true</default>
+    </entry>
+    <entry name="statusShowCpu" type="Bool">
+      <default>true</default>
+    </entry>
+    <entry name="statusShowTemp" type="Bool">
+      <default>true</default>
+    </entry>
+    <entry name="statusShowRam" type="Bool">
+      <default>true</default>
+    </entry>
+    <entry name="statusShowActions" type="Bool">
+      <default>true</default>
+    </entry>
+    <entry name="statusRefreshInterval" type="Int">
+      <default>3</default>
+    </entry>
+  </group>
+</kcfg>
