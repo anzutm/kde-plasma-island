@@ -15,10 +15,11 @@ Item {
     readonly property bool showGroup3: plasmoid.configuration.statusShowNetSpeed || plasmoid.configuration.statusShowCpu
                                        || plasmoid.configuration.statusShowTemp || plasmoid.configuration.statusShowRam
     readonly property bool hasAnyModule: showWidget && (showGroup1 || showGroup2 || showGroup3 || plasmoid.configuration.statusShowActions)
+    property real uiScale: 1.0
 
     visible:        hasAnyModule
-    implicitWidth:  hasAnyModule ? mainRow.implicitWidth + 20 : 0
-    implicitHeight: 34
+    implicitWidth:  hasAnyModule ? mainRow.implicitWidth + Math.round(20 * uiScale) : 0
+    implicitHeight: Math.round(34 * uiScale)
 
     // ── State ─────────────────────────────────────────────────────
     property string wifiSsid:        ""
@@ -204,11 +205,11 @@ Item {
     Row {
         id: mainRow
         anchors.centerIn: parent
-        spacing: 8
+        spacing: Math.round(8 * root.uiScale)
 
         // ─ Group 1: Connectivity (WiFi Capsule + Bluetooth Icon) ──
         Row {
-            spacing: 6
+            spacing: Math.round(6 * root.uiScale)
             anchors.verticalCenter: parent.verticalCenter
             visible: root.showGroup1
 
@@ -216,9 +217,9 @@ Item {
             Rectangle {
                 id: wifiBadge
                 visible:  plasmoid.configuration.statusShowNetwork
-                height:   26
-                width:    wifiInnerRow.implicitWidth + 24
-                radius:   13
+                height:   Math.round(26 * root.uiScale)
+                width:    wifiInnerRow.implicitWidth + Math.round(24 * root.uiScale)
+                radius:   height / 2
                 color:    root.wifiConnected
                           ? (root.isLight ? "#18181b" : "#ffffff")
                           : (root.isLight ? Qt.rgba(0, 0, 0, 0.07) : Qt.rgba(1, 1, 1, 0.08))
@@ -230,14 +231,14 @@ Item {
                 Row {
                     id: wifiInnerRow
                     anchors.centerIn: parent
-                    spacing: 6
+                    spacing: Math.round(6 * root.uiScale)
 
                     Kirigami.Icon {
                         source: root.wifiConnected
                                 ? "network-wireless-connected-100-symbolic"
                                 : "network-wireless-disconnected-symbolic"
-                        implicitWidth:  14
-                        implicitHeight: 14
+                        implicitWidth:  Math.round(14 * root.uiScale)
+                        implicitHeight: Math.round(14 * root.uiScale)
                         anchors.verticalCenter: parent.verticalCenter
                         isMask: true
                         color: root.wifiConnected
@@ -247,7 +248,7 @@ Item {
 
                     PC3.Label {
                         text:           root.wifiConnected ? root.wifiSsid : i18n("No Wi-Fi")
-                        font.pixelSize: 11
+                        font.pixelSize: Math.round(11 * root.uiScale)
                         font.weight:    Font.DemiBold
                         anchors.verticalCenter: parent.verticalCenter
                         color:          root.wifiConnected
@@ -255,7 +256,7 @@ Item {
                                         : (root.isLight ? Qt.rgba(0, 0, 0, 0.55) : Qt.rgba(1, 1, 1, 0.5))
                         elide:          Text.ElideRight
                         maximumLineCount: 1
-                        width:          Math.min(implicitWidth, 110)
+                        width:          Math.min(implicitWidth, Math.round(110 * root.uiScale))
                     }
                 }
 
@@ -278,9 +279,9 @@ Item {
             Rectangle {
                 id: btBadge
                 visible:  plasmoid.configuration.statusShowBluetooth
-                height:   26
-                width:    26
-                radius:   13
+                height:   Math.round(26 * root.uiScale)
+                width:    height
+                radius:   height / 2
                 color:    root.bluetoothOn
                           ? (root.isLight ? "#18181b" : "#ffffff")
                           : (root.isLight ? Qt.rgba(0, 0, 0, 0.07) : Qt.rgba(1, 1, 1, 0.08))
@@ -294,8 +295,8 @@ Item {
                     source: root.bluetoothOn
                             ? "preferences-system-bluetooth-activated-symbolic"
                             : "network-bluetooth-symbolic"
-                    implicitWidth:  14
-                    implicitHeight: 14
+                    implicitWidth:  Math.round(14 * root.uiScale)
+                    implicitHeight: Math.round(14 * root.uiScale)
                     isMask: true
                     color: root.bluetoothOn
                            ? (root.isLight ? "#ffffff" : "#1e1f22")
@@ -329,7 +330,7 @@ Item {
 
         // ─ Divider 1 ─────────────────────────────────────────────
         Rectangle {
-            width: 1; height: 18
+            width: 1; height: Math.round(18 * root.uiScale)
             anchors.verticalCenter: parent.verticalCenter
             color: root.isLight ? Qt.rgba(0, 0, 0, 0.14) : Qt.rgba(1, 1, 1, 0.12)
             visible: root.showGroup1 && root.showGroup2
@@ -337,21 +338,21 @@ Item {
 
         // ─ Group 2: System (Battery + Volume) ────────────────────
         Row {
-            spacing: 10
+            spacing: Math.round(10 * root.uiScale)
             anchors.verticalCenter: parent.verticalCenter
             visible: root.showGroup2
 
             // Battery (auto-hides on PC/desktop)
             Item {
                 width:  batRow.implicitWidth
-                height: 26
+                height: Math.round(26 * root.uiScale)
                 anchors.verticalCenter: parent.verticalCenter
                 visible: plasmoid.configuration.statusShowBattery && root.batteryPercent >= 0
 
                 Row {
                     id: batRow
                     anchors.centerIn: parent
-                    spacing: 4
+                    spacing: Math.round(4 * root.uiScale)
 
                     Kirigami.Icon {
                         source: root.batteryCharging
@@ -361,8 +362,8 @@ Item {
                                       : (root.batteryPercent < 55 ? "battery-040-symbolic"
                                          : (root.batteryPercent < 75 ? "battery-060-symbolic"
                                             : (root.batteryPercent < 90 ? "battery-080-symbolic" : "battery-100-symbolic")))))
-                        implicitWidth:  14
-                        implicitHeight: 14
+                        implicitWidth:  Math.round(14 * root.uiScale)
+                        implicitHeight: Math.round(14 * root.uiScale)
                         anchors.verticalCenter: parent.verticalCenter
                         isMask: true
                         color: root.batteryPercent < 20
@@ -372,7 +373,7 @@ Item {
 
                     PC3.Label {
                         text:           root.batteryPercent + "%"
-                        font.pixelSize: 11
+                        font.pixelSize: Math.round(11 * root.uiScale)
                         font.weight:    Font.Medium
                         font.features:  { "tnum": 1 }
                         anchors.verticalCenter: parent.verticalCenter
@@ -396,22 +397,22 @@ Item {
             // Volume (Click to mute, scroll wheel to adjust)
             Item {
                 width:  volRow.implicitWidth
-                height: 26
+                height: Math.round(26 * root.uiScale)
                 anchors.verticalCenter: parent.verticalCenter
                 visible: plasmoid.configuration.statusShowVolume && root.volumePercent >= 0
 
                 Row {
                     id: volRow
                     anchors.centerIn: parent
-                    spacing: 4
+                    spacing: Math.round(4 * root.uiScale)
 
                     Kirigami.Icon {
                         source: (root.volumeMuted || root.volumePercent === 0)
                                 ? "audio-volume-muted-symbolic"
                                 : (root.volumePercent < 35 ? "audio-volume-low-symbolic"
                                    : (root.volumePercent < 70 ? "audio-volume-medium-symbolic" : "audio-volume-high-symbolic"))
-                        implicitWidth:  14
-                        implicitHeight: 14
+                        implicitWidth:  Math.round(14 * root.uiScale)
+                        implicitHeight: Math.round(14 * root.uiScale)
                         anchors.verticalCenter: parent.verticalCenter
                         isMask: true
                         color: root.volumeMuted
@@ -421,7 +422,7 @@ Item {
 
                     PC3.Label {
                         text:           root.volumeMuted ? i18n("Muted") : (root.volumePercent + "%")
-                        font.pixelSize: 11
+                        font.pixelSize: Math.round(11 * root.uiScale)
                         font.weight:    Font.Medium
                         font.features:  { "tnum": 1 }
                         anchors.verticalCenter: parent.verticalCenter
@@ -463,7 +464,7 @@ Item {
 
         // ─ Divider 2 ─────────────────────────────────────────────
         Rectangle {
-            width: 1; height: 18
+            width: 1; height: Math.round(18 * root.uiScale)
             anchors.verticalCenter: parent.verticalCenter
             color: root.isLight ? Qt.rgba(0, 0, 0, 0.14) : Qt.rgba(1, 1, 1, 0.12)
             visible: (root.showGroup1 || root.showGroup2) && root.showGroup3
@@ -471,28 +472,28 @@ Item {
 
         // ─ Group 3: Hardware Monitor ──────────────────────────────
         Row {
-            spacing: 10
+            spacing: Math.round(10 * root.uiScale)
             anchors.verticalCenter: parent.verticalCenter
             visible: root.showGroup3
 
             // Net Speed (Download Throughput)
             Row {
-                spacing: 3
+                spacing: Math.round(3 * root.uiScale)
                 anchors.verticalCenter: parent.verticalCenter
                 visible: plasmoid.configuration.statusShowNetSpeed
 
                 PC3.Label {
                     text:           "↓"
-                    font.pixelSize: 12
+                    font.pixelSize: Math.round(12 * root.uiScale)
                     font.weight:    Font.Bold
                     anchors.verticalCenter: parent.verticalCenter
                     color:          root.isLight ? Qt.rgba(0, 0, 0, 0.6) : Qt.rgba(1, 1, 1, 0.6)
                 }
 
                 PC3.Label {
-                    width:          Math.max(54, implicitWidth)
+                    width:          Math.max(Math.round(54 * root.uiScale), implicitWidth)
                     text:           root.netSpeed
-                    font.pixelSize: 11
+                    font.pixelSize: Math.round(11 * root.uiScale)
                     font.weight:    Font.Medium
                     font.features:  { "tnum": 1 }
                     anchors.verticalCenter: parent.verticalCenter
@@ -502,22 +503,22 @@ Item {
 
             // CPU
             Row {
-                spacing: 3
+                spacing: Math.round(3 * root.uiScale)
                 anchors.verticalCenter: parent.verticalCenter
                 visible: plasmoid.configuration.statusShowCpu
 
                 PC3.Label {
                     text: i18n("CPU")
-                    font.pixelSize: 10
+                    font.pixelSize: Math.round(10 * root.uiScale)
                     font.weight: Font.DemiBold
                     anchors.verticalCenter: parent.verticalCenter
                     color: root.isLight ? Qt.rgba(0, 0, 0, 0.5) : Qt.rgba(1, 1, 1, 0.45)
                 }
                 PC3.Label {
-                    width:               Math.max(28, implicitWidth)
+                    width:               Math.max(Math.round(28 * root.uiScale), implicitWidth)
                     horizontalAlignment: Text.AlignRight
                     text:                root.cpuPercent + "%"
-                    font.pixelSize:      11
+                    font.pixelSize:      Math.round(11 * root.uiScale)
                     font.weight:         Font.Bold
                     font.features:       { "tnum": 1 }
                     anchors.verticalCenter: parent.verticalCenter
@@ -527,23 +528,23 @@ Item {
 
             // Temp
             Row {
-                spacing: 3
+                spacing: Math.round(3 * root.uiScale)
                 anchors.verticalCenter: parent.verticalCenter
                 visible: plasmoid.configuration.statusShowTemp
 
                 Kirigami.Icon {
                     source: (parseInt(root.cpuTemp) >= 70) ? "temperature-warm-symbolic" : "temperature-normal-symbolic"
-                    implicitWidth:  13
-                    implicitHeight: 13
+                    implicitWidth:  Math.round(13 * root.uiScale)
+                    implicitHeight: Math.round(13 * root.uiScale)
                     anchors.verticalCenter: parent.verticalCenter
                     isMask: true
                     color: root.isLight ? Qt.rgba(0, 0, 0, 0.6) : Qt.rgba(1, 1, 1, 0.55)
                 }
                 PC3.Label {
-                    width:               Math.max(22, implicitWidth)
+                    width:               Math.max(Math.round(22 * root.uiScale), implicitWidth)
                     horizontalAlignment: Text.AlignRight
                     text:                root.cpuTemp !== "--" ? root.cpuTemp + "°" : "--"
-                    font.pixelSize:      11
+                    font.pixelSize:      Math.round(11 * root.uiScale)
                     font.weight:         Font.Bold
                     font.features:       { "tnum": 1 }
                     anchors.verticalCenter: parent.verticalCenter
@@ -553,22 +554,22 @@ Item {
 
             // RAM
             Row {
-                spacing: 3
+                spacing: Math.round(3 * root.uiScale)
                 anchors.verticalCenter: parent.verticalCenter
                 visible: plasmoid.configuration.statusShowRam
 
                 PC3.Label {
                     text: i18n("RAM")
-                    font.pixelSize: 10
+                    font.pixelSize: Math.round(10 * root.uiScale)
                     font.weight: Font.DemiBold
                     anchors.verticalCenter: parent.verticalCenter
                     color: root.isLight ? Qt.rgba(0, 0, 0, 0.5) : Qt.rgba(1, 1, 1, 0.45)
                 }
                 PC3.Label {
-                    width:               Math.max(28, implicitWidth)
+                    width:               Math.max(Math.round(28 * root.uiScale), implicitWidth)
                     horizontalAlignment: Text.AlignRight
                     text:                root.ramPercent + "%"
-                    font.pixelSize:      11
+                    font.pixelSize:      Math.round(11 * root.uiScale)
                     font.weight:         Font.Bold
                     font.features:       { "tnum": 1 }
                     anchors.verticalCenter: parent.verticalCenter
@@ -579,7 +580,7 @@ Item {
 
         // ─ Divider 3 ─────────────────────────────────────────────
         Rectangle {
-            width: 1; height: 18
+            width: 1; height: Math.round(18 * root.uiScale)
             anchors.verticalCenter: parent.verticalCenter
             color: root.isLight ? Qt.rgba(0, 0, 0, 0.14) : Qt.rgba(1, 1, 1, 0.12)
             visible: plasmoid.configuration.statusShowActions
@@ -588,7 +589,8 @@ Item {
 
         // ─ Group 4: Quick Actions ─────────────────────────────────
         Row {
-            spacing: 5
+            readonly property int actSize: Math.round(26 * root.uiScale)
+            spacing: Math.round(5 * root.uiScale)
             anchors.verticalCenter: parent.verticalCenter
             visible: plasmoid.configuration.statusShowActions
 
@@ -599,7 +601,7 @@ Item {
                 ]
 
                 Rectangle {
-                    width:  26; height: 26; radius: 13
+                    width:  parent.actSize; height: parent.actSize; radius: parent.actSize / 2
                     color:  actionArea.containsMouse
                             ? (root.isLight ? Qt.rgba(0, 0, 0, 0.14) : Qt.rgba(1, 1, 1, 0.18))
                             : (root.isLight ? Qt.rgba(0, 0, 0, 0.07) : Qt.rgba(1, 1, 1, 0.08))
@@ -610,8 +612,8 @@ Item {
                     Kirigami.Icon {
                         anchors.centerIn: parent
                         source: modelData.icon
-                        implicitWidth:  13
-                        implicitHeight: 13
+                        implicitWidth:  Math.round(13 * root.uiScale)
+                        implicitHeight: Math.round(13 * root.uiScale)
                         isMask: true
                         color: root.isLight ? "#18181b" : "white"
                     }

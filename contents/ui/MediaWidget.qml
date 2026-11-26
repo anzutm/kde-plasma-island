@@ -13,6 +13,7 @@ Item {
     readonly property bool   showWidget: plasmoid.configuration.showMediaWidget
     readonly property bool   autoHide:   plasmoid.configuration.mediaAutoHide
     readonly property bool   isLight:    plasmoid.configuration.themeMode === "light"
+    property real uiScale: 1.0
     readonly property string accent:     /^#[0-9a-fA-F]{6}$/.test(plasmoid.configuration.accentColor)
                                          ? plasmoid.configuration.accentColor : "#8b5cf6"
 
@@ -38,13 +39,37 @@ Item {
     readonly property bool shouldShow: showWidget && (!autoHide || hasMedia)
     readonly property bool artReady:   albumArt !== "" && artImage.status === Image.Ready
 
+    property bool   _animWidth: false
+
+    Timer {
+        id: animWidthReset
+        interval: 270
+        repeat:   false
+        onTriggered: root._animWidth = false
+    }
+
+    onShouldShowChanged: {
+        root._animWidth = true
+        animWidthReset.restart()
+    }
+
+    onUiScaleChanged: {
+        if (marqueeAnim.running) {
+            titleRow.x = 0
+            marqueeAnim.restart()
+        }
+    }
+
     opacity:        shouldShow ? 1 : 0
     visible:        opacity > 0
     clip:           true
-    implicitWidth:  shouldShow ? contentRow.implicitWidth + 20 : 0
-    implicitHeight: 34
+    implicitWidth:  shouldShow ? contentRow.implicitWidth + Math.round(20 * uiScale) : 0
+    implicitHeight: Math.round(34 * uiScale)
 
-    Behavior on implicitWidth { NumberAnimation { duration: 250; easing.type: Easing.OutCubic } }
+    Behavior on implicitWidth {
+        enabled: root._animWidth
+        NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
+    }
     Behavior on opacity       { NumberAnimation { duration: 250 } }
 
     function applyMetadata(out) {
@@ -271,13 +296,14 @@ Item {
     Row {
         id: contentRow
         anchors.centerIn: parent
-        spacing: 9
+        spacing: Math.round(9 * root.uiScale)
 
         // 1. Album Art (rounded with 8px corner radius mask)
         Rectangle {
             id: artBox
-            width:  32; height: 32
-            radius: 8
+            readonly property int boxSize: Math.round(32 * root.uiScale)
+            width:  boxSize; height: boxSize
+            radius: Math.round(8 * root.uiScale)
             color:  root.isLight ? Qt.rgba(0, 0, 0, 0.06) : Qt.rgba(1, 1, 1, 0.08)
             anchors.verticalCenter: parent.verticalCenter
 
@@ -294,7 +320,7 @@ Item {
             Rectangle {
                 id: artMask
                 anchors.fill:  parent
-                radius:        8
+                radius:        Math.round(8 * root.uiScale)
                 visible:       false
                 layer.enabled: root.artReady
             }
@@ -310,8 +336,8 @@ Item {
             Kirigami.Icon {
                 anchors.centerIn: parent
                 source:           "music-note-16th-symbolic"
-                implicitWidth:    16
-                implicitHeight:   16
+                implicitWidth:    Math.round(16 * root.uiScale)
+                implicitHeight:   Math.round(16 * root.uiScale)
                 isMask:           true
                 color:            root.isLight ? Qt.rgba(0, 0, 0, 0.45) : Qt.rgba(1, 1, 1, 0.45)
                 visible:          !root.artReady
@@ -327,11 +353,17 @@ Item {
             }
         }
 
-        // 2. Title + Artist (responsive width between 64 and 130 px)
+        // 2. Title + Artist (responsive scaled width)
         Column {
-            spacing: 1
-            width:   Math.min(Math.max(titleText1.contentWidth, artistLabel.contentWidth, 64), 130)
+            spacing: Math.round(1 * root.uiScale)
+            width:   Math.min(Math.max(titleText1.implicitWidth, artistMetrics.advanceWidth, Math.round(64 * root.uiScale)), Math.round(130 * root.uiScale))
             anchors.verticalCenter: parent.verticalCenter
+
+            TextMetrics {
+                id: artistMetrics
+                font: artistLabel.font
+                text: artistLabel.text
+            }
 
             Item {
                 id:     titleClip
@@ -341,13 +373,13 @@ Item {
 
                 Row {
                     id:      titleRow
-                    spacing: 28
+                    spacing: Math.round(28 * root.uiScale)
                     x:       0
 
                     PC3.Label {
                         id:             titleText1
                         text:           root.title || i18n("No media")
-                        font.pixelSize: 11
+                        font.pixelSize: Math.round(11 * root.uiScale)
                         font.weight:    Font.DemiBold
                         color:          root.isLight ? "#18181b" : "white"
                     }
@@ -355,7 +387,7 @@ Item {
                     PC3.Label {
                         id:             titleText2
                         text:           titleText1.text
-                        font.pixelSize: 11
+                        font.pixelSize: Math.round(11 * root.uiScale)
                         font.weight:    Font.DemiBold
                         color:          root.isLight ? "#18181b" : "white"
                         visible:        root.marqueeActive
@@ -366,7 +398,7 @@ Item {
             PC3.Label {
                 id:             artistLabel
                 text:           root.artist || i18n("Music Player")
-                font.pixelSize: 10
+                font.pixelSize: Math.round(10 * root.uiScale)
                 color:          root.isLight ? Qt.rgba(0, 0, 0, 0.55) : Qt.rgba(1, 1, 1, 0.5)
                 elide:          Text.ElideRight
                 width:          parent.width
@@ -375,12 +407,14 @@ Item {
 
         // 3. Playback Controls (⏮ ▶/⏸ ⏭)
         Row {
-            spacing: 2
+            readonly property int sideBtn: Math.round(24 * root.uiScale)
+            readonly property int playBtn: Math.round(26 * root.uiScale)
+            spacing: Math.round(2 * root.uiScale)
             anchors.verticalCenter: parent.verticalCenter
 
             // Previous
             Rectangle {
-                width:  24; height: 24; radius: 12
+                width:  parent.sideBtn; height: parent.sideBtn; radius: parent.sideBtn / 2
                 color:  prevHover.containsMouse
                         ? (root.isLight ? Qt.rgba(0, 0, 0, 0.12) : Qt.rgba(1, 1, 1, 0.16))
                         : "transparent"
@@ -390,7 +424,7 @@ Item {
                 PC3.Label {
                     anchors.centerIn: parent
                     text:             "⏮"
-                    font.pixelSize:   10
+                    font.pixelSize:   Math.round(10 * root.uiScale)
                     color:            root.isLight ? Qt.rgba(0, 0, 0, 0.72) : Qt.rgba(1, 1, 1, 0.75)
                 }
                 MouseArea {
@@ -404,7 +438,7 @@ Item {
 
             // Play / Pause
             Rectangle {
-                width:  26; height: 26; radius: 13
+                width:  parent.playBtn; height: parent.playBtn; radius: parent.playBtn / 2
                 color:  playHover.containsMouse
                         ? (root.isLight ? Qt.rgba(0, 0, 0, 0.18) : Qt.rgba(1, 1, 1, 0.22))
                         : (root.isLight ? Qt.rgba(0, 0, 0, 0.09) : Qt.rgba(1, 1, 1, 0.12))
@@ -414,7 +448,7 @@ Item {
                 PC3.Label {
                     anchors.centerIn: parent
                     text:             root.playing ? "⏸" : "▶"
-                    font.pixelSize:   11
+                    font.pixelSize:   Math.round(11 * root.uiScale)
                     color:            root.isLight ? "#18181b" : "white"
                 }
                 MouseArea {
@@ -428,7 +462,7 @@ Item {
 
             // Next
             Rectangle {
-                width:  24; height: 24; radius: 12
+                width:  parent.sideBtn; height: parent.sideBtn; radius: parent.sideBtn / 2
                 color:  nextHover.containsMouse
                         ? (root.isLight ? Qt.rgba(0, 0, 0, 0.12) : Qt.rgba(1, 1, 1, 0.16))
                         : "transparent"
@@ -438,7 +472,7 @@ Item {
                 PC3.Label {
                     anchors.centerIn: parent
                     text:             "⏭"
-                    font.pixelSize:   10
+                    font.pixelSize:   Math.round(10 * root.uiScale)
                     color:            root.isLight ? Qt.rgba(0, 0, 0, 0.72) : Qt.rgba(1, 1, 1, 0.75)
                 }
                 MouseArea {
@@ -454,8 +488,8 @@ Item {
         // 4. Mirrored Continuous Soundwave Visualizer — placed to the RIGHT of Next button
         Item {
             id: waveBox
-            width:   120
-            height:  32
+            width:   Math.round(120 * root.uiScale)
+            height:  Math.round(32 * root.uiScale)
             anchors.verticalCenter: parent.verticalCenter
 
             Canvas {
@@ -471,6 +505,8 @@ Item {
                 Behavior on opacity { NumberAnimation { duration: 220 } }
                 Behavior on amp     { NumberAnimation { duration: 240; easing.type: Easing.OutCubic } }
 
+                onWidthChanged:     requestPaint()
+                onHeightChanged:    requestPaint()
                 onPhaseChanged:     requestPaint()
                 onAmpChanged:       requestPaint()
                 onWaveColorChanged: requestPaint()

@@ -13,14 +13,15 @@ Item {
     readonly property string location:       plasmoid.configuration.weatherLocation
     readonly property bool   isAutoLocation: location.trim() === ""
     readonly property bool   isLight:        plasmoid.configuration.themeMode === "light"
+    property real uiScale: 1.0
 
     onTempUnitChanged:       if (showWidget) fetchWeather()
     onLocationChanged:       if (showWidget) locationDebounce.restart()
     onRefreshMinutesChanged: refreshTimer.restart()
 
     visible:        showWidget
-    implicitWidth:  showWidget ? row.implicitWidth + 18 : 0
-    implicitHeight: 34
+    implicitWidth:  showWidget ? row.implicitWidth + Math.round(18 * uiScale) : 0
+    implicitHeight: Math.round(34 * uiScale)
 
     property string temp:         "--"
     property string weatherCode:  "113"
@@ -111,12 +112,12 @@ Item {
     Row {
         id: row
         anchors.centerIn: parent
-        spacing: 6
+        spacing: Math.round(6 * root.uiScale)
 
         Kirigami.Icon {
             source:           root.codeToIcon(root.weatherCode)
-            implicitWidth:    15
-            implicitHeight:   15
+            implicitWidth:    Math.round(15 * root.uiScale)
+            implicitHeight:   Math.round(15 * root.uiScale)
             anchors.verticalCenter: parent.verticalCenter
             isMask:           true
             color:            root.isLight ? "#18181b" : "white"
@@ -125,7 +126,7 @@ Item {
 
         PC3.Label {
             text:             (root.loading && root.temp === "--") ? "⏳" : (root.hasError && root.temp === "--" ? i18n("N/A") : root.temp)
-            font.pixelSize:   12
+            font.pixelSize:   Math.round(12 * root.uiScale)
             font.weight:      Font.DemiBold
             anchors.verticalCenter: parent.verticalCenter
             color:            (root.hasError && root.temp === "--")

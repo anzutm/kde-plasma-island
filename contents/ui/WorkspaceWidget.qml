@@ -11,9 +11,10 @@ Item {
     readonly property bool showWidget: plasmoid.configuration.showWorkspaceWidget
     readonly property bool hideEmpty:  plasmoid.configuration.workspaceHideEmpty
     readonly property bool isLight:    plasmoid.configuration.themeMode === "light"
+    property real uiScale: 1.0
     visible:        showWidget
-    implicitWidth:  showWidget ? pillRow.implicitWidth + 16 : 0
-    implicitHeight: 34
+    implicitWidth:  showWidget ? pillRow.implicitWidth + Math.round(16 * uiScale) : 0
+    implicitHeight: Math.round(34 * uiScale)
 
     property var nonEmptyMap: ({})
 
@@ -106,7 +107,7 @@ Item {
     Row {
         id: pillRow
         anchors.centerIn: parent
-        spacing: 5
+        spacing: Math.round(5 * root.uiScale)
 
         Repeater {
             model: vdi.desktopIds ? vdi.desktopIds.length : 0
@@ -116,13 +117,14 @@ Item {
                 readonly property string vdId:      String((vdi.desktopIds && vdi.desktopIds[index]) || "")
                 readonly property bool   isCurrent: vdId !== "" && vdId === String(vdi.currentDesktop || "")
                 readonly property bool   hasWin:    !!root.nonEmptyMap[vdId]
+                readonly property int    btnSize:   Math.round(24 * root.uiScale)
 
                 visible: !root.hideEmpty || isCurrent || hasWin
 
-                // Symmetrical 24x24 circles guarantee zero layout shift and zero overlapping
-                width:  visible ? 24 : 0
-                height: 24
-                radius: 12
+                // Symmetrical circles guarantee zero layout shift and zero overlapping
+                width:  visible ? btnSize : 0
+                height: btnSize
+                radius: btnSize / 2
                 color:  isCurrent
                         ? (root.isLight ? "#18181b" : "#ffffff")
                         : (root.isLight ? Qt.rgba(0, 0, 0, 0.08) : Qt.rgba(1, 1, 1, 0.12))
@@ -142,7 +144,7 @@ Item {
                 PC3.Label {
                     anchors.centerIn: parent
                     text:             index + 1
-                    font.pixelSize:   11
+                    font.pixelSize:   Math.round(11 * root.uiScale)
                     font.weight:      ws.isCurrent ? Font.Bold : Font.DemiBold
                     color:            ws.isCurrent
                                       ? (root.isLight ? "#ffffff" : "#1e1f22")

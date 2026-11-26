@@ -15,6 +15,7 @@ PlasmoidItem {
 
     readonly property int    pillRadius:  plasmoid.configuration.pillBorderRadius
     readonly property real   pillOpacity: plasmoid.configuration.pillOpacity
+    readonly property real   cfgScale:    Math.min(1.5, Math.max(0.75, plasmoid.configuration.widgetScale || 1.0))
     readonly property bool   fullWidth:   plasmoid.configuration.pillFullWidth
     readonly property bool   isLight:     plasmoid.configuration.themeMode === "light"
     readonly property string bgColor:     /^#[0-9a-fA-F]{6}$/.test(plasmoid.configuration.pillBackground)
@@ -23,33 +24,50 @@ PlasmoidItem {
                                           ? plasmoid.configuration.accentColor : "#8b5cf6"
     readonly property color  dividerCol:  isLight ? Qt.rgba(0, 0, 0, 0.14) : Qt.rgba(1, 1, 1, 0.12)
 
+    // Unscaled 1.0x compact content width estimate (avoids binding loops when scaling with container size)
+    property real _stableBaseWidth: 960
+
     // ── Visual Layout ─────────────────────────────────────────────
     fullRepresentation: Item {
         id: fullRep
 
-        readonly property real minNeededWidth: contentArea.compactWidth + 44
+        // Responsive scale follows desktop Edit Mode resize handles while preventing horizontal cutoff
+        readonly property real fitW:    (fullRep.width > 0)
+                                        ? Math.max(0.55, (fullRep.width - 20) / Math.max(120, root._stableBaseWidth + 40))
+                                        : root.cfgScale
+        readonly property real fitH:    (fullRep.height > 0)
+                                        ? Math.max(0.55, (fullRep.height - 6) / 48)
+                                        : root.cfgScale
+        readonly property real boxFit:  Math.min(2.2, fitW, fitH)
+        readonly property real uiScale: Math.max(0.55, Math.min(2.2, fitW, fitH,
+                                            root.cfgScale < 1.0 ? boxFit * root.cfgScale : Math.max(boxFit, root.cfgScale)))
+
+        readonly property int hPad: Math.round(14 * fullRep.uiScale)
+        readonly property int vPad: Math.round(5 * fullRep.uiScale)
         implicitWidth:  root.fullWidth
-                        ? Math.max(minNeededWidth, (Screen.width > 0 ? Screen.width - 16 : 1280))
-                        : Math.max(120, contentArea.compactWidth + 36)
-        implicitHeight: Math.max(54, contentArea.height + 22)
+                        ? Math.max(Math.ceil((root._stableBaseWidth + 44) * root.cfgScale), (Screen.width > 0 ? Screen.width - 32 : 1280))
+                        : Math.max(240, Math.ceil((root._stableBaseWidth + 36) * root.cfgScale))
+        implicitHeight: Math.max(44, Math.round(56 * root.cfgScale))
 
         Layout.fillWidth:       root.fullWidth
-        Layout.preferredWidth:  root.fullWidth ? -1 : implicitWidth
+        Layout.preferredWidth:  implicitWidth
         Layout.preferredHeight: implicitHeight
-        Layout.minimumWidth:    Math.max(120, minNeededWidth)
-        Layout.minimumHeight:   48
+        Layout.minimumWidth:    root.cfgScale > 1.0
+                                ? Math.min(Screen.width > 0 ? Screen.width - 16 : 1900, Math.ceil((root._stableBaseWidth + 44) * root.cfgScale))
+                                : Math.max(280, Math.ceil((root._stableBaseWidth + 40) * 0.55 + 20))
+        Layout.minimumHeight:   root.cfgScale > 1.0 ? Math.min(96, Math.round(56 * root.cfgScale)) : 36
 
         // Glassmorphism pill background
         Rectangle {
             id: pill
             anchors {
                 fill:         contentArea
-                leftMargin:   -14
-                rightMargin:  -14
-                topMargin:    -6
-                bottomMargin: -6
+                leftMargin:   -fullRep.hPad
+                rightMargin:  -fullRep.hPad
+                topMargin:    -fullRep.vPad
+                bottomMargin: -fullRep.vPad
             }
-            radius:  root.pillRadius
+            radius:  Math.round(root.pillRadius * fullRep.uiScale)
             color:   root.bgColor
             opacity: root.pillOpacity
 
@@ -63,86 +81,225 @@ PlasmoidItem {
             }
         }
 
-        // 3-Zone Content Area (Left | Center Media | Right Status) or Compact Sequential Row
+        // 3-Zone Content Area or Ordered Row (driven by widgetOrder config)
         Item {
             id: contentArea
-            readonly property real gap:        12
-            readonly property real mediaDivW:  (!root.fullWidth && mediaWidget.visible) ? (1 + gap * 2) : 0
-            readonly property real statusDivW: (!root.fullWidth && statusWidget.visible) ? (1 + gap * 2) : 0
-            readonly property real compactWidth: leftZone.implicitWidth
-                                                 + (mediaWidget.visible ? (root.fullWidth ? gap : mediaDivW) + mediaWidget.implicitWidth : 0)
-                                                 + (statusWidget.visible ? (root.fullWidth ? gap : statusDivW) + statusWidget.implicitWidth : 0)
+            readonly property real gap: Math.round(12 * fullRep.uiScale)
 
-            width:  root.fullWidth ? Math.max(compactWidth, fullRep.width - 44) : compactWidth
-            height: Math.max(leftZone.implicitHeight, mediaWidget.implicitHeight, statusWidget.implicitHeight)
+            readonly property var defaultOrder: ["clock", "weather", "workspace", "media", "status"]
+            readonly property var parsedOrder: {
+                const raw = (plasmoid.configuration.widgetOrder || "").split(",").map(s => s.trim()).filter(s => s !== "")
+                const valid = { "clock": true, "weather": true, "workspace": true, "media": true, "status": true }
+                const seen = {}
+                const out = []
+                for (let i = 0; i < raw.length; i++) {
+                    if (valid[raw[i]] && !seen[raw[i]]) {
+                        seen[raw[i]] = true
+                        out.push(raw[i])
+                    }
+                }
+                for (let i = 0; i < defaultOrder.length; i++) {
+                    if (!seen[defaultOrder[i]]) {
+                        seen[defaultOrder[i]] = true
+                        out.push(defaultOrder[i])
+                    }
+                }
+                return out
+            }
+
+            // Compute positions, divider geometry, and compactWidth in one unified pass
+            readonly property var layoutPlan: {
+                const infoMap = {
+                    "clock":     { vis: true,                  w: clockWidget.implicitWidth },
+                    "weather":   { vis: weatherWidget.showWidget,   w: weatherWidget.implicitWidth },
+                    "workspace": { vis: workspaceWidget.showWidget, w: workspaceWidget.implicitWidth },
+                    "media":     { vis: mediaWidget.visible,   w: mediaWidget.implicitWidth },
+                    "status":    { vis: statusWidget.visible,  w: statusWidget.implicitWidth }
+                }
+
+                const visKeys = []
+                for (let i = 0; i < parsedOrder.length; i++) {
+                    const k = parsedOrder[i]
+                    if (infoMap[k] && infoMap[k].vis) visKeys.push(k)
+                }
+
+                const isInfo = (k) => (k === "clock" || k === "weather" || k === "workspace")
+                const needsDiv = (a, b) => !((a === "weather" && b === "workspace") || (a === "workspace" && b === "weather"))
+
+                // Calculate tight sequential layout (compact mode & 1.0x width measurement)
+                const compactX = {}
+                const compactDivs = []
+                let cx = 0
+                for (let i = 0; i < visKeys.length; i++) {
+                    const k = visKeys[i]
+                    if (i > 0) {
+                        const prev = visKeys[i - 1]
+                        if (needsDiv(prev, k)) {
+                            compactDivs.push(cx + gap)
+                            cx += gap * 2 + 1
+                        } else {
+                            cx += gap
+                        }
+                    }
+                    compactX[k] = cx
+                    cx += infoMap[k].w
+                }
+                const tightWidth = cx
+
+                if (!root.fullWidth) {
+                    return { x: compactX, divs: compactDivs, compactWidth: tightWidth }
+                }
+
+                const fullX = {}
+                const fullDivs = []
+                const availW = Math.max(tightWidth, fullRep.width - fullRep.hPad * 2 - 16)
+
+                // Group adjacent {clock, weather, workspace} into clusters while preserving order
+                const clusters = []
+                for (let i = 0; i < visKeys.length; i++) {
+                    const k = visKeys[i]
+                    if (clusters.length > 0 && isInfo(k) && isInfo(clusters[clusters.length - 1].keys[0])) {
+                        clusters[clusters.length - 1].keys.push(k)
+                    } else {
+                        clusters.push({ keys: [k] })
+                    }
+                }
+
+                // Measure each cluster's internal width and relative offsets
+                for (let c = 0; c < clusters.length; c++) {
+                    const keys = clusters[c].keys
+                    const rel = {}
+                    const divs = []
+                    let rx = 0
+                    for (let i = 0; i < keys.length; i++) {
+                        const k = keys[i]
+                        if (i > 0) {
+                            if (needsDiv(keys[i - 1], k)) {
+                                divs.push(rx + gap)
+                                rx += gap * 2 + 1
+                            } else {
+                                rx += gap
+                            }
+                        }
+                        rel[k] = rx
+                        rx += infoMap[k].w
+                    }
+                    clusters[c].w = rx
+                    clusters[c].rel = rel
+                    clusters[c].divs = divs
+                }
+
+                // Position clusters across full-width pill (1: center, 2: ends, 3: 3-zone, 4+: even)
+                const clusterX = new Array(clusters.length)
+                if (clusters.length === 1) {
+                    clusterX[0] = Math.max(0, (availW - clusters[0].w) / 2)
+                } else if (clusters.length === 2) {
+                    clusterX[0] = 0
+                    clusterX[1] = Math.max(clusters[0].w + gap, availW - clusters[1].w)
+                } else if (clusters.length === 3) {
+                    clusterX[0] = 0
+                    clusterX[2] = Math.max(0, availW - clusters[2].w)
+                    const minMid = clusters[0].w + gap
+                    const maxMid = clusterX[2] - gap - clusters[1].w
+                    const idealMid = (availW - clusters[1].w) / 2
+                    clusterX[1] = Math.max(minMid, Math.min(maxMid, idealMid))
+                } else if (clusters.length >= 4) {
+                    let sumW = 0
+                    for (let c = 0; c < clusters.length; c++) sumW += clusters[c].w
+                    const evenGap = Math.max(gap, (availW - sumW) / (clusters.length - 1))
+                    let px = 0
+                    for (let c = 0; c < clusters.length; c++) {
+                        clusterX[c] = (c === clusters.length - 1) ? Math.max(px, availW - clusters[c].w) : px
+                        px = clusterX[c] + clusters[c].w + evenGap
+                    }
+                }
+
+                for (let c = 0; c < clusters.length; c++) {
+                    const base = clusterX[c]
+                    const keys = clusters[c].keys
+                    for (let i = 0; i < keys.length; i++) {
+                        fullX[keys[i]] = base + clusters[c].rel[keys[i]]
+                    }
+                    for (let d = 0; d < clusters[c].divs.length; d++) {
+                        fullDivs.push(base + clusters[c].divs[d])
+                    }
+                }
+
+                return { x: fullX, divs: fullDivs, compactWidth: tightWidth }
+            }
+
+            readonly property real compactWidth: layoutPlan.compactWidth
+
+            Timer {
+                id: baseWidthTimer
+                interval: 50
+                repeat:   false
+                onTriggered: contentArea.syncBaseWidth()
+            }
+
+            function syncBaseWidth() {
+                const est = compactWidth / Math.max(0.55, fullRep.uiScale)
+                if (est > 40 && Math.abs(est - root._stableBaseWidth) > 8) {
+                    root._stableBaseWidth = est
+                }
+            }
+            onCompactWidthChanged: baseWidthTimer.restart()
+            Component.onCompleted: syncBaseWidth()
+
+            width:  root.fullWidth
+                    ? Math.max(100, fullRep.width - fullRep.hPad * 2 - 16)
+                    : compactWidth
+            height: Math.max(clockWidget.implicitHeight, weatherWidget.implicitHeight,
+                             workspaceWidget.implicitHeight, mediaWidget.implicitHeight,
+                             statusWidget.implicitHeight)
             anchors.centerIn: parent
 
-            // ── Zone 1 (Left): Clock | Weather | Workspaces ──────
-            Row {
-                id: leftZone
-                x:  0
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: contentArea.gap
-
-                ClockWidget {
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-
+            // Vertical dividers placed dynamically between separated modules
+            Repeater {
+                model: 4
                 Rectangle {
-                    width: 1; height: 18
+                    required property int index
+                    width: 1
+                    height: Math.round(18 * fullRep.uiScale)
                     color: root.dividerCol
-                    visible: weatherWidget.showWidget || workspaceWidget.showWidget
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-
-                WeatherWidget {
-                    id: weatherWidget
-                    anchors.verticalCenter: parent.verticalCenter
-                }
-
-                WorkspaceWidget {
-                    id: workspaceWidget
+                    visible: index < contentArea.layoutPlan.divs.length
+                    x: visible ? contentArea.layoutPlan.divs[index] : 0
                     anchors.verticalCenter: parent.verticalCenter
                 }
             }
 
-            // Divider before media (compact mode only)
-            Rectangle {
-                width: 1; height: 18
-                color: root.dividerCol
-                visible: !root.fullWidth && mediaWidget.visible
-                x: leftZone.width + contentArea.gap
+            ClockWidget {
+                id: clockWidget
+                uiScale: fullRep.uiScale
+                x: contentArea.layoutPlan.x["clock"] || 0
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            // ── Zone 2 (Center): Media Player ────────────────────
+            WeatherWidget {
+                id: weatherWidget
+                uiScale: fullRep.uiScale
+                x: contentArea.layoutPlan.x["weather"] || 0
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
+            WorkspaceWidget {
+                id: workspaceWidget
+                uiScale: fullRep.uiScale
+                x: contentArea.layoutPlan.x["workspace"] || 0
+                anchors.verticalCenter: parent.verticalCenter
+            }
+
             MediaWidget {
                 id: mediaWidget
-                readonly property real minX:    leftZone.width + contentArea.gap
-                readonly property real maxX:    contentArea.width - (statusWidget.visible ? statusWidget.width + contentArea.gap : 0) - width
-                readonly property real centerX: (contentArea.width - width) / 2
-
-                x: root.fullWidth
-                   ? Math.max(minX, Math.min(maxX, centerX))
-                   : (leftZone.width + contentArea.mediaDivW)
+                uiScale: fullRep.uiScale
+                x: contentArea.layoutPlan.x["media"] || 0
                 anchors.verticalCenter: parent.verticalCenter
             }
 
-            // Divider before status (compact mode only)
-            Rectangle {
-                width: 1; height: 18
-                color: root.dividerCol
-                visible: !root.fullWidth && statusWidget.visible
-                x: (mediaWidget.visible ? (mediaWidget.x + mediaWidget.width) : leftZone.width) + contentArea.gap
-                anchors.verticalCenter: parent.verticalCenter
-            }
-
-            // ── Zone 3 (Right): System Status ────────────────────
             StatusWidget {
                 id: statusWidget
-                x: root.fullWidth
-                   ? (contentArea.width - width)
-                   : ((mediaWidget.visible ? (mediaWidget.x + mediaWidget.width) : leftZone.width) + contentArea.statusDivW)
+                uiScale: fullRep.uiScale
+                x: contentArea.layoutPlan.x["status"] || 0
                 anchors.verticalCenter: parent.verticalCenter
             }
         }

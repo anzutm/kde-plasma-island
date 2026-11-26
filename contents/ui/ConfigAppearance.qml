@@ -13,6 +13,7 @@ KCM.SimpleKCM {
     // KCM auto-syncs any property named cfg_<entryName>
     property alias  cfg_pillOpacity:      opacitySlider.value
     property alias  cfg_pillBorderRadius: radiusSpin.value
+    property alias  cfg_widgetScale:      scaleSlider.value
     property alias  cfg_pillFullWidth:    fullWidthSwitch.checked
     property string cfg_themeMode:        "dark"
     property string cfg_pillBackground:   "#1e1f22"
@@ -60,6 +61,23 @@ KCM.SimpleKCM {
             textFromValue: function(value) { return i18n("%1 px", value) }
         }
 
+        // Widget scale slider
+        RowLayout {
+            Kirigami.FormData.label: i18n("Widget size")
+            spacing: 8
+
+            QC.Slider {
+                id: scaleSlider
+                from: 0.75; to: 1.50; stepSize: 0.05
+                Layout.preferredWidth: 180
+            }
+            QC.Label {
+                text: Math.round(scaleSlider.value * 100) + "%"
+                font.pixelSize: 12
+                Layout.preferredWidth: 36
+            }
+        }
+
         // Full-width 3-zone layout toggle
         QC.Switch {
             id: fullWidthSwitch
@@ -77,8 +95,8 @@ KCM.SimpleKCM {
             onActivated: {
                 const nextMode = currentIndex === 1 ? "light" : "dark"
                 page.cfg_themeMode = nextMode
-                const darkDefaults  = ["#1e1f22", "#0d0e11", "#0f172a", "#0f1a14"]
-                const lightDefaults = ["#f4f4f5", "#ffffff", "#e2e8f0", "#faf5ef", "#f8fafc", "#faf8f5"]
+                const darkDefaults  = ["#1e1f22", "#0b0d12", "#0d0e11", "#0f172a", "#0f1a14"]
+                const lightDefaults = ["#f4f4f5", "#ffffff", "#e0f2fe", "#faf3e8", "#e2e8f0", "#faf5ef"]
                 if (nextMode === "light" && darkDefaults.includes(bgField.text.toLowerCase())) {
                     bgField.text = "#f4f4f5"
                 } else if (nextMode === "dark" && lightDefaults.includes(bgField.text.toLowerCase())) {
@@ -171,88 +189,132 @@ KCM.SimpleKCM {
             Kirigami.FormData.label: i18n("👁  Preview")
         }
 
-        Rectangle {
-            id: previewBackdrop
-            readonly property bool previewLight: page.cfg_themeMode === "light"
-            readonly property color fgColor: previewLight ? "#18181b" : "#ffffff"
+        Item {
+            Kirigami.FormData.label: i18n("Live")
+            implicitWidth:  328
+            implicitHeight: 68
+            Layout.preferredWidth:  implicitWidth
+            Layout.preferredHeight: implicitHeight
+            Layout.minimumWidth:    implicitWidth
+            Layout.minimumHeight:   implicitHeight
 
-            Kirigami.FormData.label: ""
-            Layout.preferredWidth:  previewPill.width  + 20
-            Layout.preferredHeight: previewPill.height + 20
-            radius: 10
-            color:  previewLight ? "#e2e8f0" : "#0b0c10"
-            border.width: 1
-            border.color: previewLight ? Qt.rgba(0, 0, 0, 0.08) : Qt.rgba(1, 1, 1, 0.06)
+            Rectangle {
+                id: previewBackdrop
+                readonly property bool previewLight: page.cfg_themeMode === "light"
+                readonly property color fgColor: previewLight ? "#18181b" : "#ffffff"
 
-            Item {
-                id: previewPill
-                anchors.centerIn: parent
-                width:   fullWidthSwitch.checked ? 340 : 280
-                height:  44
-                Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
+                anchors.fill: parent
+                radius: 10
+                clip:   true
+                color:  previewLight ? "#e2e8f0" : "#0b0c10"
+                border.width: 1
+                border.color: previewLight ? Qt.rgba(0, 0, 0, 0.08) : Qt.rgba(1, 1, 1, 0.06)
 
-                // Background capsule (only this layer uses opacitySlider.value so text remains visible at 0%)
-                Rectangle {
-                    anchors.fill: parent
-                    radius:  radiusSpin.value
-                    color:   /^#[0-9a-fA-F]{6}$/.test(bgField.text) ? bgField.text : (previewBackdrop.previewLight ? "#f4f4f5" : "#1e1f22")
-                    opacity: opacitySlider.value
-                }
+                Item {
+                    id: previewPill
+                    readonly property real previewScale: Math.min(1.18, Math.max(0.75, scaleSlider.value))
 
-                RowLayout {
                     anchors.centerIn: parent
-                    spacing: 10
+                    width:   Math.round((fullWidthSwitch.checked ? 268 : 200) * previewScale)
+                    height:  Math.round(44 * previewScale)
+                    Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
 
-                    QC.Label { text: "15:20"; color: previewBackdrop.fgColor; font.pixelSize: 14; font.bold: true }
-
+                    // Background capsule (only this layer uses opacitySlider.value so text remains visible at 0%)
                     Rectangle {
-                        Layout.preferredWidth: 1; Layout.preferredHeight: 18
-                        color: previewBackdrop.previewLight ? Qt.rgba(0, 0, 0, 0.15) : Qt.rgba(1, 1, 1, 0.2)
+                        anchors.fill: parent
+                        radius:  Math.round(radiusSpin.value * previewPill.previewScale)
+                        color:   /^#[0-9a-fA-F]{6}$/.test(bgField.text) ? bgField.text : (previewBackdrop.previewLight ? "#f4f4f5" : "#1e1f22")
+                        opacity: opacitySlider.value
                     }
 
-                    QC.Label { text: "☁ 31°C"; color: previewBackdrop.fgColor; font.pixelSize: 12 }
+                    RowLayout {
+                        anchors.centerIn: parent
+                        spacing: Math.round(10 * previewPill.previewScale)
 
-                    Rectangle {
-                        Layout.preferredWidth: 1; Layout.preferredHeight: 18
-                        color: previewBackdrop.previewLight ? Qt.rgba(0, 0, 0, 0.15) : Qt.rgba(1, 1, 1, 0.2)
-                    }
+                        QC.Label {
+                            text: "15:20"
+                            color: previewBackdrop.fgColor
+                            font.pixelSize: Math.round(14 * previewPill.previewScale)
+                            font.bold: true
+                        }
 
-                    Rectangle {
-                        Layout.preferredWidth: 10; Layout.preferredHeight: 10; radius: 5
-                        color: /^#[0-9a-fA-F]{6}$/.test(accentField.text) ? accentField.text : "#8b5cf6"
+                        Rectangle {
+                            Layout.preferredWidth: 1
+                            Layout.preferredHeight: Math.round(18 * previewPill.previewScale)
+                            color: previewBackdrop.previewLight ? Qt.rgba(0, 0, 0, 0.15) : Qt.rgba(1, 1, 1, 0.2)
+                        }
+
+                        RowLayout {
+                            spacing: Math.round(4 * previewPill.previewScale)
+                            Kirigami.Icon {
+                                source: "weather-few-clouds-symbolic"
+                                Layout.preferredWidth: Math.round(14 * previewPill.previewScale)
+                                Layout.preferredHeight: Math.round(14 * previewPill.previewScale)
+                                isMask: true
+                                color: previewBackdrop.fgColor
+                            }
+                            QC.Label {
+                                text: "31°C"
+                                color: previewBackdrop.fgColor
+                                font.pixelSize: Math.round(12 * previewPill.previewScale)
+                            }
+                        }
+
+                        Rectangle {
+                            Layout.preferredWidth: 1
+                            Layout.preferredHeight: Math.round(18 * previewPill.previewScale)
+                            color: previewBackdrop.previewLight ? Qt.rgba(0, 0, 0, 0.15) : Qt.rgba(1, 1, 1, 0.2)
+                        }
+
+                        Rectangle {
+                            readonly property int dotSize: Math.round(10 * previewPill.previewScale)
+                            Layout.preferredWidth: dotSize
+                            Layout.preferredHeight: dotSize
+                            radius: dotSize / 2
+                            color: /^#[0-9a-fA-F]{6}$/.test(accentField.text) ? accentField.text : "#8b5cf6"
+                        }
+                        QC.Label {
+                            text: i18n("Playing")
+                            color: previewBackdrop.fgColor
+                            font.pixelSize: Math.round(11 * previewPill.previewScale)
+                        }
                     }
-                    QC.Label { text: i18n("Playing"); color: previewBackdrop.fgColor; font.pixelSize: 11 }
                 }
             }
         }
 
-        // ── 3. Quick Presets (Dark & Light Themes) ────────────────
+        // ── 3. Quick Presets (4 Diverse Themes for Current Color Mode) ──
         Kirigami.Separator {
             Kirigami.FormData.isSection: true
             Kirigami.FormData.label: i18n("🎨  Quick Presets")
         }
 
-        GridLayout {
+        RowLayout {
             Kirigami.FormData.label: i18n("Theme")
-            columns: 4
-            columnSpacing: 8
-            rowSpacing: 8
+            spacing: 8
 
             Repeater {
-                model: [
-                    { label: i18n("Dark"),   bg: "#1e1f22", accent: "#8b5cf6", mode: "dark"  },
-                    { label: i18n("Darker"), bg: "#0d0e11", accent: "#3b82f6", mode: "dark"  },
-                    { label: i18n("Navy"),   bg: "#0f172a", accent: "#06b6d4", mode: "dark"  },
-                    { label: i18n("Forest"), bg: "#0f1a14", accent: "#22c55e", mode: "dark"  },
-                    { label: i18n("Light"),  bg: "#f4f4f5", accent: "#7c3aed", mode: "light" },
-                    { label: i18n("Paper"),  bg: "#ffffff", accent: "#2563eb", mode: "light" },
-                    { label: i18n("Frost"),  bg: "#e2e8f0", accent: "#0284c7", mode: "light" },
-                    { label: i18n("Warm"),   bg: "#faf5ef", accent: "#d97706", mode: "light" }
-                ]
+                model: page.cfg_themeMode === "light"
+                       ? [
+                             { label: i18n("Cloud"), bg: "#f4f4f5", accent: "#7c3aed" },
+                             { label: i18n("Snow"),  bg: "#ffffff", accent: "#2563eb" },
+                             { label: i18n("Sky"),   bg: "#e0f2fe", accent: "#0284c7" },
+                             { label: i18n("Sand"),  bg: "#faf3e8", accent: "#d97706" }
+                         ]
+                       : [
+                             { label: i18n("Charcoal"), bg: "#1e1f22", accent: "#8b5cf6" },
+                             { label: i18n("Obsidian"), bg: "#0b0d12", accent: "#3b82f6" },
+                             { label: i18n("Ocean"),    bg: "#0f172a", accent: "#06b6d4" },
+                             { label: i18n("Emerald"),  bg: "#0f1a14", accent: "#22c55e" }
+                         ]
 
                 Rectangle {
+                    id: presetBtn
+                    required property var modelData
+                    readonly property bool selected: bgField.text.toLowerCase() === modelData.bg
+                                                     && accentField.text.toLowerCase() === modelData.accent
+
                     Layout.preferredWidth: 76; Layout.preferredHeight: 28; radius: 14
-                    readonly property bool selected: bgField.text.toLowerCase() === modelData.bg && page.cfg_themeMode === modelData.mode
                     color:  themeArea.containsMouse
                             ? Qt.rgba(128/255, 128/255, 128/255, 0.28)
                             : (selected ? Qt.rgba(128/255, 128/255, 128/255, 0.22) : Qt.rgba(128/255, 128/255, 128/255, 0.12))
@@ -267,7 +329,7 @@ KCM.SimpleKCM {
 
                         Rectangle {
                             width:  10; height: 10; radius: 5
-                            color:  modelData.bg
+                            color:  presetBtn.modelData.bg
                             border.width: 1
                             border.color: Qt.rgba(128/255, 128/255, 128/255, 0.5)
                             anchors.verticalCenter: parent.verticalCenter
@@ -275,14 +337,14 @@ KCM.SimpleKCM {
 
                         Rectangle {
                             width:  5; height: 5; radius: 2.5
-                            color:  modelData.accent
+                            color:  presetBtn.modelData.accent
                             anchors.verticalCenter: parent.verticalCenter
                         }
 
                         QC.Label {
-                            text:           modelData.label
+                            text:           presetBtn.modelData.label
                             font.pixelSize: 11
-                            font.weight:    parent.parent.selected ? Font.Bold : Font.Normal
+                            font.weight:    presetBtn.selected ? Font.Bold : Font.Normal
                             anchors.verticalCenter: parent.verticalCenter
                         }
                     }
@@ -293,9 +355,8 @@ KCM.SimpleKCM {
                         hoverEnabled: true
                         cursorShape:  Qt.PointingHandCursor
                         onClicked: {
-                            bgField.text       = modelData.bg
-                            accentField.text   = modelData.accent
-                            page.cfg_themeMode = modelData.mode
+                            bgField.text     = presetBtn.modelData.bg
+                            accentField.text = presetBtn.modelData.accent
                         }
                     }
                 }

@@ -12,6 +12,9 @@
     <entry name="pillBorderRadius" type="Int">
       <default>22</default>
     </entry>
+    <entry name="widgetScale" type="Double">
+      <default>1.0</default>
+    </entry>
     <entry name="accentColor" type="String">
       <default>#8b5cf6</default>
     </entry>
@@ -54,6 +57,9 @@
 
   <!-- Workspace -->
   <group name="Workspace">
+    <entry name="widgetOrder" type="String">
+      <default>clock,weather,workspace,media,status</default>
+    </entry>
     <entry name="showWorkspaceWidget" type="Bool">
       <default>true</default>
     </entry>

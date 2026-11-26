@@ -9,6 +9,7 @@ Item {
     readonly property bool use24h:      plasmoid.configuration.clockUse24h
     readonly property bool showSeconds: plasmoid.configuration.clockShowSeconds
     readonly property bool isLight:     plasmoid.configuration.themeMode === "light"
+    property real uiScale: 1.0
 
     TextMetrics {
         id: timeMetrics
@@ -17,8 +18,8 @@ Item {
     }
 
     // Dynamic safe width based on widest tabular string and date text prevents both jitter and clipping
-    implicitWidth:  Math.ceil(Math.max(timeMetrics.advanceWidth + 4, dateLabel.contentWidth + 4))
-    implicitHeight: 34
+    implicitWidth:  Math.ceil(Math.max(timeMetrics.advanceWidth, dateLabel.contentWidth) + Math.round(4 * uiScale))
+    implicitHeight: Math.max(col.implicitHeight, Math.round(34 * uiScale))
 
     property string _lastTime: ""
     property string _lastDateKey: ""
@@ -73,7 +74,7 @@ Item {
             id:                  timeLabel
             width:               parent.width
             text:                root.formatTime(new Date())
-            font.pixelSize:      14
+            font.pixelSize:      Math.round(14 * root.uiScale)
             font.weight:         Font.Bold
             // OpenType Tabular Numbers: all digits 0-9 share exact same width
             font.features:       { "tnum": 1 }
@@ -85,11 +86,11 @@ Item {
             id:                  dateLabel
             width:               parent.width
             text:                root.formatDate(new Date())
-            font.pixelSize:      10
+            font.pixelSize:      Math.round(10 * root.uiScale)
             font.weight:         Font.Normal
             horizontalAlignment: Text.AlignHCenter
             color:               root.isLight ? Qt.rgba(0, 0, 0, 0.55) : Qt.rgba(1, 1, 1, 0.45)
-            font.letterSpacing:  0.2
+            font.letterSpacing:  0.2 * root.uiScale
         }
     }
 }
