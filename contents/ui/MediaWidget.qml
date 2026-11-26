@@ -528,7 +528,7 @@ Item {
                     if (w <= 0 || h <= 0) return
 
                     const cy = h * 0.5
-                    const maxHalf = h * 0.48
+                    const maxHalf = h * 0.44
                     const bands = root.fftBands
                     const live = root.hasLiveAudio
 
@@ -540,29 +540,29 @@ Item {
                         } else if (live) {
                             b[i] = Math.max(0.05, Math.min(1.0, bands[i] || 0))
                         } else {
-                            const kick = Math.pow(0.5 + 0.5 * Math.sin(phase * 2 - i * 0.45), 2.0)
-                            b[i] = 0.14 + 0.78 * kick * (1.0 - i * 0.08)
+                            const kick = Math.pow(0.5 + 0.5 * Math.sin(phase * 2 - i * 0.45), 1.8)
+                            b[i] = 0.16 + 0.78 * kick
                         }
                     }
 
-                    // Left-to-right FFT spectrum with matching sleek horizontal needle tails on both ends
+                    // Left-to-right FFT spectrum balanced inside waveBox without clipping peaks
                     const pts = [
                         { x: 0.00, y: 0.0 },
                         { x: 0.03, y: 0.055 + b[0] * 0.05 },
-                        { x: 0.08, y: 0.065 + b[0] * 0.12 },
-                        { x: 0.14, y: b[0] * 0.62 },
+                        { x: 0.08, y: 0.065 + b[0] * 0.14 },
+                        { x: 0.14, y: b[0] * 0.70 },
                         { x: 0.22, y: b[0] * 1.44 },
-                        { x: 0.30, y: Math.min(b[0], b[1]) * 0.28 },
-                        { x: 0.38, y: b[1] * 1.34 },
-                        { x: 0.46, y: Math.min(b[1], b[2]) * 0.26 },
-                        { x: 0.54, y: b[2] * 1.24 },
-                        { x: 0.62, y: Math.min(b[2], b[3]) * 0.24 },
-                        { x: 0.69, y: b[3] * 1.24 },
-                        { x: 0.76, y: Math.min(b[3], b[4]) * 0.24 },
-                        { x: 0.83, y: b[4] * 1.18 },
-                        { x: 0.89, y: Math.min(b[4], b[5]) * 0.22 },
-                        { x: 0.93, y: b[5] * 1.05 },
-                        { x: 0.96, y: 0.065 + b[6] * 0.45 },
+                        { x: 0.30, y: (b[0] + b[1]) * 0.15 },
+                        { x: 0.38, y: b[1] * 1.50 },
+                        { x: 0.46, y: (b[1] + b[2]) * 0.16 },
+                        { x: 0.54, y: b[2] * 1.54 },
+                        { x: 0.62, y: (b[2] + b[3]) * 0.16 },
+                        { x: 0.69, y: b[3] * 1.52 },
+                        { x: 0.76, y: (b[3] + b[4]) * 0.15 },
+                        { x: 0.83, y: b[4] * 1.42 },
+                        { x: 0.89, y: (b[4] + b[5]) * 0.14 },
+                        { x: 0.93, y: b[5] * 1.20 },
+                        { x: 0.96, y: 0.065 + b[6] * 0.50 },
                         { x: 0.985, y: 0.055 + b[6] * 0.08 },
                         { x: 1.00, y: 0.0 }
                     ]
@@ -573,7 +573,7 @@ Item {
                     const botY = new Array(pts.length)
                     for (let i = 0; i < pts.length; i++) {
                         const taper = Math.sin(Math.PI * pts[i].x)
-                        const hh = maxHalf * amp * Math.min(1.65, pts[i].y + (root.playing ? 0.04 * taper : 0))
+                        const hh = maxHalf * amp * Math.min(1.68, pts[i].y + (root.playing ? 0.04 * taper : 0))
                         topX[i] = pts[i].x * w
                         topY[i] = cy - hh
                         botY[i] = cy + hh

@@ -14,10 +14,23 @@ KCM.SimpleKCM {
     property alias  cfg_pillOpacity:      opacitySlider.value
     property alias  cfg_pillBorderRadius: radiusSpin.value
     property alias  cfg_widgetScale:      scaleSlider.value
-    property alias  cfg_pillFullWidth:    fullWidthSwitch.checked
     property string cfg_themeMode:        "dark"
     property string cfg_pillBackground:   "#1e1f22"
     property string cfg_accentColor:      "#8b5cf6"
+    property bool   unsavedChanges:       liveSync.unsavedChanges
+
+    function saveConfig() {
+        liveSync.commitSaved()
+    }
+
+    LiveConfigSync {
+        id: liveSync
+        targetPage: page
+        keys: [
+            "pillOpacity", "pillBorderRadius", "widgetScale",
+            "themeMode", "pillBackground", "accentColor"
+        ]
+    }
 
     onCfg_themeModeChanged: {
         themeModeCombo.currentIndex = (cfg_themeMode === "light" ? 1 : 0)
@@ -68,7 +81,7 @@ KCM.SimpleKCM {
 
             QC.Slider {
                 id: scaleSlider
-                from: 0.75; to: 1.50; stepSize: 0.05
+                from: 0.60; to: 1.80; stepSize: 0.05
                 Layout.preferredWidth: 180
             }
             QC.Label {
@@ -76,12 +89,6 @@ KCM.SimpleKCM {
                 font.pixelSize: 12
                 Layout.preferredWidth: 36
             }
-        }
-
-        // Full-width 3-zone layout toggle
-        QC.Switch {
-            id: fullWidthSwitch
-            Kirigami.FormData.label: i18n("Full-width bar (3-zone layout)")
         }
 
         // Color mode selector
@@ -212,10 +219,12 @@ KCM.SimpleKCM {
 
                 Item {
                     id: previewPill
-                    readonly property real previewScale: Math.min(1.18, Math.max(0.75, scaleSlider.value))
+                    readonly property real previewScale: Math.min(1.18, Math.max(0.60, scaleSlider.value))
+                    readonly property bool isFullWidthBar: (typeof plasmoid !== "undefined" && plasmoid.configuration)
+                                                           ? plasmoid.configuration.pillFullWidth : false
 
                     anchors.centerIn: parent
-                    width:   Math.round((fullWidthSwitch.checked ? 268 : 200) * previewScale)
+                    width:   Math.round((isFullWidthBar ? 268 : 200) * previewScale)
                     height:  Math.round(44 * previewScale)
                     Behavior on width { NumberAnimation { duration: 180; easing.type: Easing.OutCubic } }
 

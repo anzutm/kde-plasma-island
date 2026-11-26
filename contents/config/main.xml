@@ -22,7 +22,7 @@
       <default>#1e1f22</default>
     </entry>
     <entry name="pillFullWidth" type="Bool">
-      <default>true</default>
+      <default>false</default>
     </entry>
     <entry name="themeMode" type="String">
       <default>dark</default>
@@ -59,6 +59,9 @@
   <group name="Workspace">
     <entry name="widgetOrder" type="String">
       <default>clock,weather,workspace,media,status</default>
+    </entry>
+    <entry name="widgetZones" type="String">
+      <default>clock:left,weather:left,workspace:left,media:center,status:right</default>
     </entry>
     <entry name="showWorkspaceWidget" type="Bool">
       <default>true</default>

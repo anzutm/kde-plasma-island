@@ -20,6 +20,21 @@ KCM.SimpleKCM {
     // weatherTempUnit is String ("C" / "F") — cannot alias to ComboBox.currentIndex
     // Use explicit string property instead
     property string cfg_weatherTempUnit: "C"
+    property bool   unsavedChanges:      liveSync.unsavedChanges
+
+    function saveConfig() {
+        liveSync.commitSaved()
+    }
+
+    LiveConfigSync {
+        id: liveSync
+        targetPage: page
+        keys: [
+            "clockUse24h", "clockShowSeconds",
+            "showWeatherWidget", "weatherLocation",
+            "weatherTempUnit", "weatherRefreshInterval"
+        ]
+    }
 
     onCfg_weatherTempUnitChanged: {
         tempUnitCombo.currentIndex = (cfg_weatherTempUnit === "F" ? 1 : 0)

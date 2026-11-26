@@ -152,35 +152,46 @@ def audio_loop(state: BassState):
 
                 raw_bands = []
                 frame_max = 0.0
-                for lo, hi, weight in BAND_DEFS:
-                    # Sqrt-width energy scaling keeps wide mid/high bands responsive next to narrow bass bins
+                for idx_b, (lo, hi, weight) in enumerate(BAND_DEFS):
+                    # Combine band RMS and peak bin energy so narrow mid/vocal notes stay lively
                     sq = 0.0
+                    pk = 0.0
                     for b in range(lo, hi):
-                        sq += mag[b] * mag[b]
-                    val = math.sqrt(sq / math.sqrt(hi - lo)) * weight
+                        m_val = mag[b]
+                        sq += m_val * m_val
+                        if m_val > pk:
+                            pk = m_val
+                    rms_band = math.sqrt(sq / max(1, hi - lo))
+                    val = (rms_band * 0.55 + pk * 0.45) * weight if idx_b >= 2 else math.sqrt(sq / math.sqrt(hi - lo)) * weight
                     raw_bands.append(val)
                     if val > frame_max:
                         frame_max = val
 
-                # Blend global AGC with per-band AGC; lower floor keeps quiet tracks lively
-                ref_peak = max(ref_peak * 0.994, frame_max, 0.18)
+                # Blend global AGC with strong per-band AGC so center & mid frequencies react vividly
+                ref_peak = max(ref_peak * 0.993, frame_max, 0.14)
 
                 for i, val in enumerate(raw_bands):
-                    band_peaks[i] = max(band_peaks[i] * 0.992, val, 0.05 if i >= 3 else 0.12)
-                    denom = (0.22 * ref_peak + 0.78 * band_peaks[i]) if i >= 3 else ref_peak
-                    ratio = min(1.0, val / denom)
+                    min_floor = 0.11 if i <= 1 else 0.045
+                    band_peaks[i] = max(band_peaks[i] * 0.991, val, min_floor)
+                    if i == 0:
+                        denom = 0.62 * ref_peak + 0.38 * band_peaks[i]
+                    elif i == 1:
+                        denom = 0.40 * ref_peak + 0.60 * band_peaks[i]
+                    else:
+                        denom = 0.22 * ref_peak + 0.78 * band_peaks[i]
+                    ratio = min(1.0, val / max(1e-6, denom))
 
                     flux = max(0.0, ratio - prev_ratios[i])
                     prev_ratios[i] = ratio
 
-                    # Bass uses steeper contrast curve; mid/highs use higher sensitivity curve + transient punch
-                    if i <= 2:
-                        shaped = min(1.0, (ratio ** 1.50) + flux * (0.75 if i <= 1 else 0.45))
+                    # Balanced bass punch and crisp mid sensitivity without saturating ceiling
+                    if i <= 1:
+                        shaped = min(1.0, (ratio ** 1.32) + flux * 0.72)
                     else:
-                        shaped = min(1.0, (ratio ** 1.12) + flux * 0.65)
+                        shaped = min(1.0, (ratio ** 1.00) + flux * 0.65)
 
-                    # Fast attack (0.86), smooth decay (0.20)
-                    alpha = 0.86 if shaped > smooth[i] else 0.20
+                    # Fast attack (0.86), snappy decay (0.24)
+                    alpha = 0.86 if shaped > smooth[i] else 0.24
                     smooth[i] += alpha * (shaped - smooth[i])
 
                 with state.lock:
