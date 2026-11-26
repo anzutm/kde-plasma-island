@@ -8,6 +8,7 @@
   <img src="https://img.shields.io/badge/KDE%20Plasma-6.0%2B-1d99f3?style=flat-square&logo=kde&logoColor=white" alt="KDE Plasma 6.0+">
   <img src="https://img.shields.io/badge/Qt-6-41cd52?style=flat-square&logo=qt&logoColor=white" alt="Qt 6">
   <img src="https://img.shields.io/badge/Version-1.1.0-8b5cf6?style=flat-square" alt="Version 1.1.0">
+  <a href="https://store.kde.org/p/2382766"><img src="https://img.shields.io/badge/KDE%20Store-Plasma%20Island-1d99f3?style=flat-square&logo=kde&logoColor=white" alt="KDE Store"></a>
   <img src="https://img.shields.io/badge/License-GPL--2.0--or--later-blue?style=flat-square" alt="License GPL-2.0-or-later">
 </p>
 
@@ -47,7 +48,10 @@
 
 ## Installation
 
-### From Source (Recommended)
+### From KDE Store
+Install directly via **Add or Manage Widgets → Get New... → Download New Plasma Widgets** (search **Plasma Island**), or download from [store.kde.org/p/2382766](https://store.kde.org/p/2382766).
+
+### From Source
 ```bash
 git clone https://github.com/anzutm/kde-plasma-island.git
 cd kde-plasma-island
